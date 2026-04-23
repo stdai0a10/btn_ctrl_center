@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Account\EmailController;
 use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\Account\ProfileController;
+use App\Http\Controllers\Security\ReauthController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
@@ -39,4 +40,6 @@ Route::middleware(['web', 'auth:sanctum'])->group(function (): void {
     Route::put('/account/profile', [ProfileController::class, 'update']);
     Route::post('/account/email/change-request', [EmailController::class, 'store']);
     Route::put('/account/password', [PasswordController::class, 'update']);
+    Route::get('/account/reauth', [ReauthController::class, 'show']);
+    Route::post('/account/reauth', [ReauthController::class, 'store']);
 });

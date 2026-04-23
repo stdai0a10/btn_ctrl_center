@@ -19,4 +19,5 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/account/profile', fn () => Inertia::render('Account/Profile'))->name('account.profile');
     Route::get('/account/email', fn () => Inertia::render('Account/Email'))->name('account.email');
     Route::get('/account/security', fn () => Inertia::render('Account/Security'))->name('account.security');
+    Route::get('/reauth', fn () => Inertia::render('Account/Reauth'))->name('account.reauth');
 });

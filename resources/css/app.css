@@ -146,6 +146,11 @@ button:disabled {
     text-decoration: none;
 }
 
+.inline-link {
+    color: var(--accent-dark);
+    font-weight: 800;
+}
+
 .actions-row {
     display: flex;
     flex-wrap: wrap;

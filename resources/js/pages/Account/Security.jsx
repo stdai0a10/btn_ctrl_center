@@ -39,6 +39,11 @@ export default function Security() {
                     {profile && <p className="lede">密碼狀態：{hasPassword ? '已設定' : '未設定'}</p>}
                     {message && <div className="notice success">{message}</div>}
                     {errors.form?.map((error) => <div className="notice error" key={error}>{error}</div>)}
+                    {errors.reauth?.map((error) => (
+                        <div className="notice error" key={error}>
+                            {error} <Link className="inline-link" href="/reauth?back=/account/security">前往重新驗證</Link>
+                        </div>
+                    ))}
                     {errors.email?.map((error) => <div className="notice error" key={error}>{error}</div>)}
 
                     <form onSubmit={submit} className="stack">

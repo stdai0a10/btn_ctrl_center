@@ -5,14 +5,21 @@ namespace App\Http\Controllers\Account;
 use App\Http\Controllers\ApiController;
 use App\Models\Auth\UserEmail;
 use App\Services\Auth\EmailVerificationService;
+use App\Services\Auth\ReauthenticationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class EmailController extends ApiController
 {
-    public function store(Request $request, EmailVerificationService $emailVerificationService)
+    public function store(
+        Request $request,
+        EmailVerificationService $emailVerificationService,
+        ReauthenticationService $reauthenticationService,
+    )
     {
+        $reauthenticationService->assertFresh($request->user());
+
         $validated = $request->validate([
             'email' => ['required', 'email:rfc', 'max:255'],
         ]);

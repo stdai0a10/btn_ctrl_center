@@ -44,6 +44,11 @@ export default function Email() {
 
                     {message && <div className="notice success">{message}</div>}
                     {errors.form?.map((error) => <div className="notice error" key={error}>{error}</div>)}
+                    {errors.reauth?.map((error) => (
+                        <div className="notice error" key={error}>
+                            {error} <Link className="inline-link" href="/reauth?back=/account/email">前往重新驗證</Link>
+                        </div>
+                    ))}
 
                     <form onSubmit={submit} className="stack">
                         <label>

@@ -39,6 +39,16 @@ class AccountSettingsTest extends TestCase
 
         $this->actingAs($user)
             ->postJson('/api/account/email/change-request', ['email' => 'NEW@example.com'])
+            ->assertUnprocessable()
+            ->assertJsonPath('data.reauth.0', '此操作需要重新驗證身分。');
+
+        $this->actingAs($user)
+            ->postJson('/api/account/reauth', ['password' => 'password-password'])
+            ->assertOk()
+            ->assertJsonPath('message', '重新驗證完成。');
+
+        $this->actingAs($user)
+            ->postJson('/api/account/email/change-request', ['email' => 'NEW@example.com'])
             ->assertOk()
             ->assertJsonPath('message', '系統已寄出 EMAIL 變更驗證信。');
 
@@ -60,21 +70,25 @@ class AccountSettingsTest extends TestCase
         $this->assertSame($newEmail->id, $user->refresh()->primary_email_id);
     }
 
-    public function test_user_can_set_and_change_password(): void
+    public function test_user_must_reauth_before_changing_password(): void
     {
-        $user = $this->verifiedUser('security@example.com', null);
+        $user = $this->verifiedUser('security@example.com');
 
         $this->actingAs($user)
             ->putJson('/api/account/password', [
-                'password' => 'first-password-password',
-                'password_confirmation' => 'first-password-password',
-            ])->assertOk();
+                'current_password' => 'password-password',
+                'password' => 'blocked-password-password',
+                'password_confirmation' => 'blocked-password-password',
+            ])->assertUnprocessable()
+            ->assertJsonPath('data.reauth.0', '此操作需要重新驗證身分。');
 
-        $this->assertTrue(Hash::check('first-password-password', $user->refresh()->password));
+        $this->actingAs($user)
+            ->postJson('/api/account/reauth', ['password' => 'password-password'])
+            ->assertOk();
 
         $this->actingAs($user)
             ->putJson('/api/account/password', [
-                'current_password' => 'first-password-password',
+                'current_password' => 'password-password',
                 'password' => 'second-password-password',
                 'password_confirmation' => 'second-password-password',
             ])->assertOk();
