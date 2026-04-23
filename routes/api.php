@@ -2,6 +2,9 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Account\EmailController;
+use App\Http\Controllers\Account\PasswordController;
+use App\Http\Controllers\Account\ProfileController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
@@ -31,4 +34,9 @@ Route::post('/auth/reset-password', [ResetPasswordController::class, 'store']);
 Route::middleware(['web', 'auth:sanctum'])->group(function (): void {
     Route::post('/auth/logout', [LoginController::class, 'destroy']);
     Route::get('/auth/me', [LoginController::class, 'me']);
+
+    Route::get('/account/profile', [ProfileController::class, 'show']);
+    Route::put('/account/profile', [ProfileController::class, 'update']);
+    Route::post('/account/email/change-request', [EmailController::class, 'store']);
+    Route::put('/account/password', [PasswordController::class, 'update']);
 });

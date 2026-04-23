@@ -151,3 +151,15 @@ button:disabled {
     flex-wrap: wrap;
     gap: 1rem;
 }
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.7rem 1rem;
+    margin: 1.5rem 0;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.profile-grid span {
+    color: var(--muted);
+}

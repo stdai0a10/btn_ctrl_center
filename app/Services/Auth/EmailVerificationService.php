@@ -90,6 +90,8 @@ class EmailVerificationService
 
             if ($request->purpose === 'register') {
                 $this->verifyRegistrationEmail($request);
+            } elseif ($request->purpose === 'change_email') {
+                $this->verifyChangedEmail($request);
             }
 
             $request->forceFill(['used_at' => now()])->save();
@@ -116,6 +118,45 @@ class EmailVerificationService
             'primary_email_id' => $userEmail->id,
             'status' => 'active',
         ])->save();
+    }
+
+    private function verifyChangedEmail(EmailVerificationRequest $request): void
+    {
+        $user = $request->user()->with('primaryEmail')->firstOrFail();
+        $oldEmail = $user->primaryEmail?->email;
+
+        $userEmail = UserEmail::query()
+            ->where('user_id', $request->user_id)
+            ->where('email', $request->email)
+            ->firstOrFail();
+
+        if (UserEmail::query()->where('email', $request->email)->where('user_id', '!=', $request->user_id)->exists()) {
+            throw ValidationException::withMessages([
+                'email' => '此 EMAIL 已被其他帳號使用。',
+            ]);
+        }
+
+        UserEmail::query()
+            ->where('user_id', $request->user_id)
+            ->where('id', '!=', $userEmail->id)
+            ->update(['is_primary' => false]);
+
+        $userEmail->forceFill([
+            'is_verified' => true,
+            'verified_at' => now(),
+            'is_primary' => true,
+            'reserved_until' => null,
+        ])->save();
+
+        $user->forceFill([
+            'primary_email_id' => $userEmail->id,
+        ])->save();
+
+        if ($oldEmail !== null && $oldEmail !== $request->email) {
+            Mail::raw("你的帳號 EMAIL 已變更為 {$request->email}。若不是本人操作，請立即聯絡管理員。", function ($message) use ($oldEmail): void {
+                $message->to($oldEmail)->subject('帳號 EMAIL 已變更');
+            });
+        }
     }
 
     private function sendVerificationMail(string $email, string $token): void
