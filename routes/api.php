@@ -3,8 +3,10 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\EmailVerificationController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 
 Route::get('/health', fn () => response()->json([
     'message' => 'success',
@@ -22,6 +24,9 @@ Route::post('/auth/register/email', [RegisterController::class, 'store']);
 Route::post('/auth/login/email', [LoginController::class, 'store'])->middleware('web');
 Route::post('/auth/email/resend', [EmailVerificationController::class, 'resend']);
 Route::get('/auth/email/verify', [EmailVerificationController::class, 'verify'])->name('api.email.verify');
+Route::post('/auth/forgot-password', [ForgotPasswordController::class, 'store']);
+Route::get('/auth/reset-password', [ResetPasswordController::class, 'show']);
+Route::post('/auth/reset-password', [ResetPasswordController::class, 'store']);
 
 Route::middleware(['web', 'auth:sanctum'])->group(function (): void {
     Route::post('/auth/logout', [LoginController::class, 'destroy']);
