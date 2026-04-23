@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class UserAuthProviderFactory extends Factory
 {
+    protected $model = UserAuthProvider::class;
+
     public function definition(): array
     {
         return [

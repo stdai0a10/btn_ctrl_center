@@ -7,7 +7,9 @@ export default function Home({ appName }) {
             <main>
                 <h1>{appName}</h1>
                 <p>Laravel 12 + Inertia + React</p>
-                <Link href="/about">About</Link>
+                <Link href="/login">登入</Link>
+                {' · '}
+                <Link href="/register">註冊</Link>
             </main>
         </>
     )

@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class UserEmailFactory extends Factory
 {
+    protected $model = UserEmail::class;
+
     public function definition(): array
     {
         return [

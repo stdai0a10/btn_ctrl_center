@@ -5,6 +5,7 @@ namespace App\Models\Auth;
 use App\Models\User;
 use Database\Factories\UserEmailFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -40,5 +41,10 @@ class UserEmail extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    protected static function newFactory(): Factory
+    {
+        return UserEmailFactory::new();
     }
 }
