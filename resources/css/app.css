@@ -115,6 +115,17 @@ button:disabled {
     opacity: 0.6;
 }
 
+.button-link {
+    display: inline-flex;
+    justify-content: center;
+    margin-top: 1rem;
+    text-decoration: none;
+}
+
+.button-link.secondary {
+    background: #06c755;
+}
+
 .notice {
     margin: 1rem 0;
     border-radius: 16px;

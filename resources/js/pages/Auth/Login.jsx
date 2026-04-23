@@ -62,6 +62,8 @@ export default function Login() {
                         </button>
                     </form>
 
+                    <a className="button-link secondary" href="/api/auth/line/redirect">使用 LINE 登入</a>
+
                     <div className="actions-row">
                         <Link className="text-link" href="/register">建立帳號</Link>
                         <Link className="text-link" href="/forgot-password">忘記密碼</Link>

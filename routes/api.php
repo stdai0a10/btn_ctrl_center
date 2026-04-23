@@ -8,6 +8,7 @@ use App\Http\Controllers\Account\ProfileController;
 use App\Http\Controllers\Security\ReauthController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\LineAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
@@ -31,6 +32,8 @@ Route::get('/auth/email/verify', [EmailVerificationController::class, 'verify'])
 Route::post('/auth/forgot-password', [ForgotPasswordController::class, 'store']);
 Route::get('/auth/reset-password', [ResetPasswordController::class, 'show']);
 Route::post('/auth/reset-password', [ResetPasswordController::class, 'store']);
+Route::get('/auth/line/redirect', [LineAuthController::class, 'redirect'])->middleware('web')->name('auth.line.redirect');
+Route::get('/auth/line/callback', [LineAuthController::class, 'callback'])->middleware('web')->name('auth.line.callback');
 
 Route::middleware(['web', 'auth:sanctum'])->group(function (): void {
     Route::post('/auth/logout', [LoginController::class, 'destroy']);
