@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Account\EmailController;
 use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\Account\ProfileController;
+use App\Http\Controllers\Account\ProviderBindingController;
 use App\Http\Controllers\Security\ReauthController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -45,4 +46,8 @@ Route::middleware(['web', 'auth:sanctum'])->group(function (): void {
     Route::put('/account/password', [PasswordController::class, 'update']);
     Route::get('/account/reauth', [ReauthController::class, 'show']);
     Route::post('/account/reauth', [ReauthController::class, 'store']);
+    Route::get('/account/providers/line/bind', [ProviderBindingController::class, 'lineRedirect'])->name('account.providers.line.bind');
+    Route::post('/account/providers/line/bind', [ProviderBindingController::class, 'lineRedirect']);
+    Route::get('/account/providers/line/callback', [ProviderBindingController::class, 'lineCallback'])->name('account.providers.line.callback');
+    Route::delete('/account/providers/line', [ProviderBindingController::class, 'destroyLine']);
 });

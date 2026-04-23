@@ -179,3 +179,20 @@ button:disabled {
 .profile-grid span {
     color: var(--muted);
 }
+
+.provider-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 1rem;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.provider-card p {
+    margin: 0.35rem 0 0;
+    color: var(--muted);
+}

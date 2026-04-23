@@ -60,6 +60,7 @@ export default function Profile() {
                     <div className="actions-row">
                         <Link className="text-link" href="/account/email">EMAIL 設定</Link>
                         <Link className="text-link" href="/account/security">安全設定</Link>
+                        <Link className="text-link" href="/account/providers">登入方式</Link>
                     </div>
                 </section>
             </main>
