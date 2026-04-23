@@ -8,3 +8,6 @@ Route::get('/', function () {
         'appName' => config('app.name'),
     ]);
 });
+
+Route::get('/register', fn () => Inertia::render('Auth/Register'))->name('register');
+Route::get('/verify-email/result', fn () => Inertia::render('Auth/VerifyEmailResult'))->name('email.verify.result');
