@@ -35,6 +35,7 @@ Route::get('/auth/reset-password', [ResetPasswordController::class, 'show']);
 Route::post('/auth/reset-password', [ResetPasswordController::class, 'store']);
 Route::get('/auth/line/redirect', [LineAuthController::class, 'redirect'])->middleware('web')->name('auth.line.redirect');
 Route::get('/auth/line/callback', [LineAuthController::class, 'callback'])->middleware('web')->name('auth.line.callback');
+Route::post('/auth/line/liff', [LineAuthController::class, 'liff'])->middleware('web');
 
 Route::middleware(['web', 'auth:sanctum'])->group(function (): void {
     Route::post('/auth/logout', [LoginController::class, 'destroy']);

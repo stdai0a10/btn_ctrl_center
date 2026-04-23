@@ -5,6 +5,7 @@ namespace App\Services\Auth;
 use App\Models\Auth\UserAuthProvider;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 class LineAuthService
 {
@@ -48,5 +49,20 @@ class LineAuthService
 
             return $user;
         });
+    }
+
+    public function loginOrRegisterFromLiffAccessToken(string $accessToken): User
+    {
+        $profile = Http::withToken($accessToken)
+            ->acceptJson()
+            ->get('https://api.line.me/v2/profile')
+            ->throw()
+            ->json();
+
+        return $this->loginOrRegisterFromProvider(
+            (string) $profile['userId'],
+            $profile['displayName'] ?? null,
+            $accessToken,
+        );
     }
 }

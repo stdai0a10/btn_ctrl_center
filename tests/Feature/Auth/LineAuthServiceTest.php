@@ -5,6 +5,7 @@ namespace Tests\Feature\Auth;
 use App\Models\Auth\UserAuthProvider;
 use App\Services\Auth\LineAuthService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class LineAuthServiceTest extends TestCase
@@ -41,5 +42,27 @@ class LineAuthServiceTest extends TestCase
         $this->assertTrue($firstUser->is($secondUser));
         $this->assertSame(1, UserAuthProvider::query()->where('provider_user_id', 'line-user-2')->count());
         $this->assertSame('First Name', $secondUser->refresh()->name);
+    }
+
+    public function test_liff_access_token_can_login_or_register_line_user(): void
+    {
+        Http::fake([
+            'https://api.line.me/v2/profile' => Http::response([
+                'userId' => 'liff-user-1',
+                'displayName' => 'LIFF User',
+            ]),
+        ]);
+
+        $this->postJson('/api/auth/line/liff', [
+            'access_token' => 'line-liff-token',
+        ])->assertOk()
+            ->assertJsonPath('message', 'LINE LIFF 登入成功。')
+            ->assertJsonPath('data.name', 'LIFF User');
+
+        $this->assertAuthenticated();
+        $this->assertDatabaseHas('user_auth_providers', [
+            'provider' => 'line',
+            'provider_user_id' => 'liff-user-1',
+        ]);
     }
 }
