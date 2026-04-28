@@ -28,7 +28,7 @@ class LineAuthController extends ApiController
             $lineUser->refreshToken ?? null,
         );
 
-        Auth::login($user);
+        Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
         return redirect()->route('account.profile')->with('success', 'LINE 登入成功。');
@@ -42,7 +42,7 @@ class LineAuthController extends ApiController
 
         $user = $lineAuthService->loginOrRegisterFromLiffAccessToken($validated['access_token']);
 
-        Auth::login($user);
+        Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
         return $this->response([

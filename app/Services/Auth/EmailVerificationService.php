@@ -139,7 +139,10 @@ class EmailVerificationService
         UserEmail::query()
             ->where('user_id', $request->user_id)
             ->where('id', '!=', $userEmail->id)
-            ->update(['is_primary' => false]);
+            ->update([
+                'is_primary' => false,
+                'is_verified' => false,
+            ]);
 
         $userEmail->forceFill([
             'is_verified' => true,
