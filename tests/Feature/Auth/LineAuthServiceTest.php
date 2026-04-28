@@ -53,7 +53,8 @@ class LineAuthServiceTest extends TestCase
             ]),
         ]);
 
-        $this->postJson('/api/auth/line/liff', [
+        $this->withHeader('referer', 'http://localhost:8000/login')
+            ->postJson('/api/auth/line/liff', [
             'access_token' => 'line-liff-token',
         ])->assertOk()
             ->assertJsonPath('message', 'LINE LIFF 登入成功。')

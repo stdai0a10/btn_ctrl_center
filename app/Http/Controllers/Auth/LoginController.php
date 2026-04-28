@@ -32,6 +32,7 @@ class LoginController extends ApiController
             ->with('user')
             ->where('email', $email)
             ->where('is_verified', true)
+            ->where('is_primary', true)
             ->first();
 
         $user = $userEmail?->user;
@@ -50,7 +51,7 @@ class LoginController extends ApiController
         RateLimiter::clear($ipKey);
         $this->logAttempt('login', $email, $request->ip(), true);
 
-        Auth::login($user);
+        Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
         return $this->response($this->userPayload($user), '登入成功。');

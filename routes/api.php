@@ -27,7 +27,7 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::post('/auth/register/email', [RegisterController::class, 'store']);
-Route::post('/auth/login/email', [LoginController::class, 'store'])->middleware('web');
+Route::post('/auth/login/email', [LoginController::class, 'store']);
 Route::post('/auth/email/resend', [EmailVerificationController::class, 'resend']);
 Route::get('/auth/email/verify', [EmailVerificationController::class, 'verify'])->name('api.email.verify');
 Route::post('/auth/forgot-password', [ForgotPasswordController::class, 'store']);
@@ -35,9 +35,9 @@ Route::get('/auth/reset-password', [ResetPasswordController::class, 'show']);
 Route::post('/auth/reset-password', [ResetPasswordController::class, 'store']);
 Route::get('/auth/line/redirect', [LineAuthController::class, 'redirect'])->middleware('web')->name('auth.line.redirect');
 Route::get('/auth/line/callback', [LineAuthController::class, 'callback'])->middleware('web')->name('auth.line.callback');
-Route::post('/auth/line/liff', [LineAuthController::class, 'liff'])->middleware('web');
+Route::post('/auth/line/liff', [LineAuthController::class, 'liff']);
 
-Route::middleware(['web', 'auth:sanctum'])->group(function (): void {
+Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/auth/logout', [LoginController::class, 'destroy']);
     Route::get('/auth/me', [LoginController::class, 'me']);
 

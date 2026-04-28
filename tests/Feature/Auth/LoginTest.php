@@ -23,7 +23,8 @@ class LoginTest extends TestCase
         ]);
         $user->forceFill(['primary_email_id' => $email->id])->save();
 
-        $this->postJson('/api/auth/login/email', [
+        $this->withHeader('referer', 'http://localhost:8000/login')
+            ->postJson('/api/auth/login/email', [
             'email' => 'LOGIN@example.com',
             'password' => 'password-password',
         ])->assertOk()
@@ -32,11 +33,14 @@ class LoginTest extends TestCase
 
         $this->assertAuthenticatedAs($user);
 
-        $this->getJson('/api/auth/me')
+        $this->withHeader('referer', 'http://localhost:8000/account/profile')
+            ->getJson('/api/auth/me')
             ->assertOk()
             ->assertJsonPath('data.public_id', $user->public_id);
 
-        $this->postJson('/api/auth/logout')->assertOk();
+        $this->withHeader('referer', 'http://localhost:8000/account/profile')
+            ->postJson('/api/auth/logout')
+            ->assertOk();
         $this->assertGuest();
     }
 

@@ -68,6 +68,22 @@ class AccountSettingsTest extends TestCase
         $this->assertTrue($newEmail->is_verified);
         $this->assertTrue($newEmail->is_primary);
         $this->assertSame($newEmail->id, $user->refresh()->primary_email_id);
+
+        $oldEmail = UserEmail::query()->where('email', 'old@example.com')->firstOrFail();
+        $this->assertFalse($oldEmail->is_verified);
+        $this->assertFalse($oldEmail->is_primary);
+
+        $this->postJson('/api/auth/login/email', [
+            'email' => 'old@example.com',
+            'password' => 'password-password',
+        ])->assertUnprocessable();
+
+        $this->withHeader('referer', 'http://localhost:8000/login')
+            ->postJson('/api/auth/login/email', [
+                'email' => 'new@example.com',
+                'password' => 'password-password',
+            ])->assertOk()
+            ->assertJsonPath('data.email', 'new@example.com');
     }
 
     public function test_user_must_reauth_before_changing_password(): void
