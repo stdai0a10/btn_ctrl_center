@@ -6,6 +6,8 @@ use App\Http\Controllers\Account\EmailController;
 use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\Account\ProfileController;
 use App\Http\Controllers\Account\ProviderBindingController;
+use App\Http\Controllers\HouseController;
+use App\Http\Controllers\HouseMemberController;
 use App\Http\Controllers\Security\ReauthController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -51,4 +53,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/account/providers/line/bind', [ProviderBindingController::class, 'lineRedirect']);
     Route::get('/account/providers/line/callback', [ProviderBindingController::class, 'lineCallback'])->name('account.providers.line.callback');
     Route::delete('/account/providers/line', [ProviderBindingController::class, 'destroyLine']);
+
+    Route::apiResource('houses', HouseController::class);
+    Route::get('/houses/{house}/members', [HouseMemberController::class, 'index']);
+    Route::delete('/houses/{house}/members/{user:public_id}', [HouseMemberController::class, 'destroy']);
+    Route::patch('/houses/{house}/members/{user:public_id}/role', [HouseMemberController::class, 'updateRole']);
 });

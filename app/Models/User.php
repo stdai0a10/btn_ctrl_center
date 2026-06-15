@@ -10,6 +10,7 @@ use App\Models\Auth\UserAuthProvider;
 use App\Models\Auth\UserEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -112,5 +113,12 @@ class User extends Authenticatable
     public function authAttemptLogs(): HasMany
     {
         return $this->hasMany(AuthAttemptLog::class, 'account_key', 'public_id');
+    }
+
+    public function houses(): BelongsToMany
+    {
+        return $this->belongsToMany(House::class)
+            ->withPivot(['id', 'role', 'joined_at'])
+            ->withTimestamps();
     }
 }
