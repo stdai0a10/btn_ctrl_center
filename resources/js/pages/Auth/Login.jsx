@@ -1,10 +1,12 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import AppLayout from '../../layouts/AppLayout';
 
 export default function Login() {
     const [form, setForm] = useState({ email: '', password: '' });
     const [errors, setErrors] = useState({});
     const [processing, setProcessing] = useState(false);
+    const redirectTo = new URLSearchParams(window.location.search).get('redirect') ?? '';
 
     async function submit(event) {
         event.preventDefault();
@@ -12,8 +14,11 @@ export default function Login() {
         setErrors({});
 
         try {
-            await window.axios.post('/api/auth/login/email', form);
-            router.visit('/account/profile');
+            const response = await window.axios.post('/api/auth/login/email', {
+                ...form,
+                redirect: redirectTo,
+            });
+            router.visit(response.data.data.redirect_to ?? '/');
         } catch (error) {
             setErrors(error.response?.data?.data ?? { form: [error.response?.data?.message ?? '登入失敗，請稍後再試。'] });
         } finally {
@@ -24,7 +29,7 @@ export default function Login() {
     return (
         <>
             <Head title="登入" />
-            <main className="auth-shell">
+            <AppLayout contentClassName="auth-layout-main">
                 <section className="auth-card">
                     <p className="eyebrow">Secure Sign In</p>
                     <h1>登入</h1>
@@ -69,7 +74,7 @@ export default function Login() {
                         <Link className="text-link" href="/forgot-password">忘記密碼</Link>
                     </div>
                 </section>
-            </main>
+            </AppLayout>
         </>
     );
 }

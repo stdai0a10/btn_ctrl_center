@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
+import AppLayout from '../../layouts/AppLayout';
 
 export default function Register() {
     const [form, setForm] = useState({
@@ -31,7 +32,7 @@ export default function Register() {
     return (
         <>
             <Head title="註冊" />
-            <main className="auth-shell">
+            <AppLayout contentClassName="auth-layout-main">
                 <section className="auth-card">
                     <p className="eyebrow">Button Control Center</p>
                     <h1>建立帳號</h1>
@@ -86,7 +87,7 @@ export default function Register() {
 
                     <Link className="text-link" href="/login">已有帳號？前往登入</Link>
                 </section>
-            </main>
+            </AppLayout>
         </>
     );
 }

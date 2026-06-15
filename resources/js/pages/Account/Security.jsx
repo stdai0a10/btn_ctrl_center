@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import AppLayout from '../../layouts/AppLayout';
 
 export default function Security() {
     const [profile, setProfile] = useState(null);
@@ -32,7 +33,7 @@ export default function Security() {
     return (
         <>
             <Head title="安全設定" />
-            <main className="auth-shell">
+            <AppLayout contentClassName="auth-layout-main">
                 <section className="auth-card">
                     <p className="eyebrow">Security</p>
                     <h1>安全設定</h1>
@@ -90,7 +91,7 @@ export default function Security() {
 
                     <Link className="text-link" href="/account/profile">返回帳號資料</Link>
                 </section>
-            </main>
+            </AppLayout>
         </>
     );
 }

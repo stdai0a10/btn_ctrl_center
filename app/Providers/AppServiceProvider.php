@@ -2,6 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\Room;
+use App\Models\Device;
+use App\Policies\DevicePolicy;
+use App\Policies\RoomPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Line\LineExtendSocialite;
@@ -22,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(Room::class, RoomPolicy::class);
+        Gate::policy(Device::class, DevicePolicy::class);
+
         Event::listen(SocialiteWasCalled::class, LineExtendSocialite::class.'@handle');
     }
 }

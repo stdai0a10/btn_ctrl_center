@@ -21,4 +21,9 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/account/security', fn () => Inertia::render('Account/Security'))->name('account.security');
     Route::get('/account/providers', fn () => Inertia::render('Account/Providers'))->name('account.providers');
     Route::get('/reauth', fn () => Inertia::render('Account/Reauth'))->name('account.reauth');
+    Route::get('/rooms', fn () => Inertia::render('Rooms/Index'))->name('rooms.index');
+    Route::get('/rooms/{room}', fn (string $room) => Inertia::render('Rooms/Show', [
+        'roomPublicId' => $room,
+    ]))->name('rooms.show');
+    Route::get('/room-invitations', fn () => Inertia::render('Rooms/Invitations'))->name('room-invitations.index');
 });
