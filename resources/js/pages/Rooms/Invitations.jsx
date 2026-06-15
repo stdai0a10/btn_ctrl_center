@@ -17,8 +17,8 @@ export default function Invitations() {
     async function reload() {
         setLoading(true);
         const [invitationResponse, joinRequestResponse] = await Promise.all([
-            window.axios.get('/api/house-invitations'),
-            window.axios.get('/api/house-join-requests'),
+            window.axios.get('/api/room-invitations'),
+            window.axios.get('/api/room-join-requests'),
         ]);
         setInvitations(invitationResponse.data.data);
         setJoinRequests(joinRequestResponse.data.data);
@@ -45,7 +45,7 @@ export default function Invitations() {
                 <section className="page-header">
                     <p className="eyebrow">Invitations</p>
                     <h1>我的邀請</h1>
-                    <Link className="text-link" href="/houses">返回設備管理</Link>
+                    <Link className="text-link" href="/rooms">返回設備管理</Link>
                 </section>
 
                 {message && <div className="notice success">{message}</div>}
@@ -59,8 +59,8 @@ export default function Invitations() {
                         empty="沒有待處理邀請"
                         renderActions={(item) => item.status === 'pending' && (
                             <>
-                                <button type="button" onClick={() => action(`/api/house-invitations/${item.id}/accept`, '邀請已接受。')}>接受</button>
-                                <button type="button" className="button-ghost" onClick={() => action(`/api/house-invitations/${item.id}/ignore`, '邀請已忽略。')}>忽略</button>
+                                <button type="button" onClick={() => action(`/api/room-invitations/${item.id}/accept`, '邀請已接受。')}>接受</button>
+                                <button type="button" className="button-ghost" onClick={() => action(`/api/room-invitations/${item.id}/ignore`, '邀請已忽略。')}>忽略</button>
                             </>
                         )}
                     />
@@ -69,7 +69,7 @@ export default function Invitations() {
                         items={joinRequests.sent}
                         empty="沒有加入申請"
                         renderActions={(item) => item.status === 'pending' && (
-                            <button type="button" className="button-ghost" onClick={() => action(`/api/house-join-requests/${item.id}/cancel`, '申請已取消。')}>取消</button>
+                            <button type="button" className="button-ghost" onClick={() => action(`/api/room-join-requests/${item.id}/cancel`, '申請已取消。')}>取消</button>
                         )}
                     />
                     <RequestPanel title="已送出邀請" items={invitations.sent} empty="沒有送出邀請" />
@@ -89,7 +89,7 @@ function RequestPanel({ title, items, empty, renderActions }) {
                 {items.map((item) => (
                     <article className="list-item" key={`${title}-${item.id}`}>
                         <div>
-                            <strong>{item.house.name}</strong>
+                            <strong>{item.room.name}</strong>
                             <span>{item.status}</span>
                         </div>
                         <div className="compact-actions">

@@ -3,37 +3,37 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\ApiException;
-use App\Models\House;
-use App\Models\HouseJoinRequest;
+use App\Models\Room;
+use App\Models\RoomJoinRequest;
 use App\Models\User;
-use App\Services\HouseJoinRequestService;
+use App\Services\RoomJoinRequestService;
 use Illuminate\Http\Request;
 
-class HouseJoinRequestController extends ApiController
+class RoomJoinRequestController extends ApiController
 {
-    public function __construct(private readonly HouseJoinRequestService $joinRequests)
+    public function __construct(private readonly RoomJoinRequestService $joinRequests)
     {
     }
 
     public function index(Request $request)
     {
-        $sent = HouseJoinRequest::query()
-            ->with(['house', 'requester', 'approver'])
+        $sent = RoomJoinRequest::query()
+            ->with(['room', 'requester', 'approver'])
             ->where('requester_user_id', $request->user()->id)
             ->latest()
             ->get()
-            ->map(fn (HouseJoinRequest $joinRequest): array => $this->payload($joinRequest));
+            ->map(fn (RoomJoinRequest $joinRequest): array => $this->payload($joinRequest));
 
-        $ownedHouseIds = $request->user()->houses()
-            ->wherePivot('role', House::ROLE_OWNER)
-            ->pluck('houses.id');
+        $ownedRoomIds = $request->user()->rooms()
+            ->wherePivot('role', Room::ROLE_OWNER)
+            ->pluck('rooms.id');
 
-        $received = HouseJoinRequest::query()
-            ->with(['house', 'requester', 'approver'])
-            ->whereIn('house_id', $ownedHouseIds)
+        $received = RoomJoinRequest::query()
+            ->with(['room', 'requester', 'approver'])
+            ->whereIn('room_id', $ownedRoomIds)
             ->latest()
             ->get()
-            ->map(fn (HouseJoinRequest $joinRequest): array => $this->payload($joinRequest));
+            ->map(fn (RoomJoinRequest $joinRequest): array => $this->payload($joinRequest));
 
         return $this->response([
             'sent' => $sent,
@@ -41,26 +41,26 @@ class HouseJoinRequestController extends ApiController
         ]);
     }
 
-    public function store(Request $request, House $house)
+    public function store(Request $request, Room $room)
     {
-        $joinRequest = $this->joinRequests->request($house, $request->user());
+        $joinRequest = $this->joinRequests->request($room, $request->user());
 
         return $this->response($this->payload($joinRequest), '加入申請已送出。', 201);
     }
 
-    public function accept(Request $request, HouseJoinRequest $joinRequest)
+    public function accept(Request $request, RoomJoinRequest $joinRequest)
     {
         $this->joinRequests->accept($joinRequest, $request->user());
 
         return $this->response(null, '加入申請已接受。');
     }
 
-    public function ignore(Request $request, HouseJoinRequest $joinRequest)
+    public function ignore(Request $request, RoomJoinRequest $joinRequest)
     {
-        $joinRequest->loadMissing('house');
+        $joinRequest->loadMissing('room');
 
-        if (! $joinRequest->house->isOwner($request->user())) {
-            throw new ApiException('Only house owners can ignore join requests.', 'HOUSE_OWNER_REQUIRED', 403);
+        if (! $joinRequest->room->isOwner($request->user())) {
+            throw new ApiException('Only room owners can ignore join requests.', 'ROOM_OWNER_REQUIRED', 403);
         }
 
         $this->joinRequests->ignore($joinRequest, $request->user());
@@ -68,23 +68,23 @@ class HouseJoinRequestController extends ApiController
         return $this->response(null, '加入申請已忽略。');
     }
 
-    public function cancel(Request $request, HouseJoinRequest $joinRequest)
+    public function cancel(Request $request, RoomJoinRequest $joinRequest)
     {
         $this->joinRequests->cancel($joinRequest, $request->user());
 
         return $this->response(null, '加入申請已取消。');
     }
 
-    private function payload(HouseJoinRequest $joinRequest): array
+    private function payload(RoomJoinRequest $joinRequest): array
     {
-        $joinRequest->loadMissing(['house', 'requester', 'approver']);
+        $joinRequest->loadMissing(['room', 'requester', 'approver']);
 
         return [
             'id' => $joinRequest->id,
             'status' => $joinRequest->status,
-            'house' => [
-                'public_id' => $joinRequest->house->public_id,
-                'name' => $joinRequest->house->name,
+            'room' => [
+                'public_id' => $joinRequest->room->public_id,
+                'name' => $joinRequest->room->name,
             ],
             'requester' => $this->userPayload($joinRequest->requester),
             'approver' => $joinRequest->approver ? $this->userPayload($joinRequest->approver) : null,

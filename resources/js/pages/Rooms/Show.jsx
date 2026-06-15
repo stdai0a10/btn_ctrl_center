@@ -5,8 +5,8 @@ import { errorMessage, formErrors } from '../../lib/http';
 
 const emptyDeviceForm = { serial_number: '', secret: '', name: '', lock: false };
 
-export default function HouseShow({ housePublicId }) {
-    const [house, setHouse] = useState(null);
+export default function RoomShow({ roomPublicId }) {
+    const [room, setRoom] = useState(null);
     const [devices, setDevices] = useState([]);
     const [invitations, setInvitations] = useState([]);
     const [joinRequests, setJoinRequests] = useState([]);
@@ -19,28 +19,28 @@ export default function HouseShow({ housePublicId }) {
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
 
-    const isOwner = house?.role === 'owner';
+    const isOwner = room?.role === 'owner';
 
     useEffect(() => {
         reload();
-    }, [housePublicId]);
+    }, [roomPublicId]);
 
     async function reload() {
         setLoading(true);
-        const [houseResponse, deviceResponse, invitationResponse, joinRequestResponse] = await Promise.all([
-            window.axios.get(`/api/houses/${housePublicId}`),
-            window.axios.get(`/api/houses/${housePublicId}/devices`),
-            window.axios.get('/api/house-invitations'),
-            window.axios.get('/api/house-join-requests'),
+        const [roomResponse, deviceResponse, invitationResponse, joinRequestResponse] = await Promise.all([
+            window.axios.get(`/api/rooms/${roomPublicId}`),
+            window.axios.get(`/api/rooms/${roomPublicId}/devices`),
+            window.axios.get('/api/room-invitations'),
+            window.axios.get('/api/room-join-requests'),
         ]);
 
-        const nextHouse = houseResponse.data.data;
+        const nextRoom = roomResponse.data.data;
         const nextDevices = deviceResponse.data.data;
-        setHouse(nextHouse);
+        setRoom(nextRoom);
         setDevices(nextDevices);
         setDeviceNames(Object.fromEntries(nextDevices.map((device) => [device.id, device.name ?? ''])));
-        setInvitations(invitationResponse.data.data.sent.filter((item) => item.house.public_id === housePublicId));
-        setJoinRequests(joinRequestResponse.data.data.received.filter((item) => item.house.public_id === housePublicId));
+        setInvitations(invitationResponse.data.data.sent.filter((item) => item.room.public_id === roomPublicId));
+        setJoinRequests(joinRequestResponse.data.data.received.filter((item) => item.room.public_id === roomPublicId));
         setLoading(false);
     }
 
@@ -65,7 +65,7 @@ export default function HouseShow({ housePublicId }) {
     async function invite(event) {
         event.preventDefault();
         await run(
-            () => window.axios.post(`/api/houses/${housePublicId}/invitations`, { invitee_public_id: inviteePublicId }),
+            () => window.axios.post(`/api/rooms/${roomPublicId}/invitations`, { invitee_public_id: inviteePublicId }),
             '邀請已送出。',
         );
         setInviteePublicId('');
@@ -74,48 +74,48 @@ export default function HouseShow({ housePublicId }) {
     async function addDevice(event) {
         event.preventDefault();
         await run(
-            () => window.axios.post(`/api/houses/${housePublicId}/devices`, deviceForm),
+            () => window.axios.post(`/api/rooms/${roomPublicId}/devices`, deviceForm),
             '設備已加入。',
         );
         setDeviceForm(emptyDeviceForm);
     }
 
-    async function leaveHouse() {
-        if (!window.confirm('確定要退出房屋？')) {
+    async function leaveRoom() {
+        if (!window.confirm('確定要退出房間？')) {
             return;
         }
 
-        await run(() => window.axios.post(`/api/houses/${housePublicId}/leave`), '已退出房屋。');
-        router.visit('/houses');
+        await run(() => window.axios.post(`/api/rooms/${roomPublicId}/leave`), '已退出房間。');
+        router.visit('/rooms');
     }
 
-    async function deleteHouse() {
-        if (!window.confirm('確定要刪除房屋？')) {
+    async function deleteRoom() {
+        if (!window.confirm('確定要刪除房間？')) {
             return;
         }
 
-        await run(() => window.axios.delete(`/api/houses/${housePublicId}`), '房屋已刪除。');
-        router.visit('/houses');
+        await run(() => window.axios.delete(`/api/rooms/${roomPublicId}`), '房間已刪除。');
+        router.visit('/rooms');
     }
 
     const ownerCount = useMemo(
-        () => house?.members?.filter((member) => member.role === 'owner').length ?? 0,
-        [house],
+        () => room?.members?.filter((member) => member.role === 'owner').length ?? 0,
+        [room],
     );
 
     return (
         <>
-            <Head title={house ? house.name : '房屋詳情'} />
+            <Head title={room ? room.name : '房間詳情'} />
             <AppLayout>
                 {loading && <p className="muted">載入中...</p>}
-                {!loading && house && (
+                {!loading && room && (
                     <>
                         <section className="page-header">
                             <p className="eyebrow">{isOwner ? 'Owner' : 'Resident'}</p>
-                            <h1>{house.name}</h1>
+                            <h1>{room.name}</h1>
                             <div className="actions-row">
-                                <button type="button" className="button-ghost" onClick={leaveHouse} disabled={processing}>退出</button>
-                                {isOwner && <button type="button" className="button-danger" onClick={deleteHouse} disabled={processing}>刪除</button>}
+                                <button type="button" className="button-ghost" onClick={leaveRoom} disabled={processing}>退出</button>
+                                {isOwner && <button type="button" className="button-danger" onClick={deleteRoom} disabled={processing}>刪除</button>}
                             </div>
                         </section>
 
@@ -126,24 +126,24 @@ export default function HouseShow({ housePublicId }) {
                             <section className="panel">
                                 <div className="panel-heading">
                                     <h2>成員</h2>
-                                    <span className="status-pill">{house.members.length} 人</span>
+                                    <span className="status-pill">{room.members.length} 人</span>
                                 </div>
                                 <div className="item-list">
-                                    {house.members.map((member) => (
+                                    {room.members.map((member) => (
                                         <article className="list-item" key={member.public_id}>
                                             <div>
                                                 <strong>{member.display_name}</strong>
-                                                <span>{member.role === 'owner' ? '屋主' : '住戶'} · {member.public_id}</span>
+                                                <span>{member.role === 'owner' ? '房主' : '住戶'} · {member.public_id}</span>
                                             </div>
                                             {isOwner && (
                                                 <div className="compact-actions">
                                                     {member.role === 'resident' && (
-                                                        <button type="button" onClick={() => run(() => window.axios.patch(`/api/houses/${housePublicId}/members/${member.public_id}/role`, { role: 'owner' }), '身份已更新。')}>升為屋主</button>
+                                                        <button type="button" onClick={() => run(() => window.axios.patch(`/api/rooms/${roomPublicId}/members/${member.public_id}/role`, { role: 'owner' }), '身份已更新。')}>升為房主</button>
                                                     )}
                                                     {member.role === 'owner' && ownerCount > 1 && (
-                                                        <button type="button" className="button-ghost" onClick={() => run(() => window.axios.patch(`/api/houses/${housePublicId}/members/${member.public_id}/role`, { role: 'resident' }), '身份已更新。')}>改為住戶</button>
+                                                        <button type="button" className="button-ghost" onClick={() => run(() => window.axios.patch(`/api/rooms/${roomPublicId}/members/${member.public_id}/role`, { role: 'resident' }), '身份已更新。')}>改為住戶</button>
                                                     )}
-                                                    <button type="button" className="button-danger" onClick={() => run(() => window.axios.delete(`/api/houses/${housePublicId}/members/${member.public_id}`), '成員已移除。')}>移除</button>
+                                                    <button type="button" className="button-danger" onClick={() => run(() => window.axios.delete(`/api/rooms/${roomPublicId}/members/${member.public_id}`), '成員已移除。')}>移除</button>
                                                 </div>
                                             )}
                                         </article>
@@ -168,7 +168,7 @@ export default function HouseShow({ housePublicId }) {
                                     empty="沒有邀請"
                                     renderText={(item) => `${item.invitee.display_name} · ${item.status}`}
                                     renderActions={(item) => isOwner && item.status === 'pending' && (
-                                        <button type="button" className="button-ghost" onClick={() => run(() => window.axios.post(`/api/house-invitations/${item.id}/cancel`), '邀請已取消。')}>取消</button>
+                                        <button type="button" className="button-ghost" onClick={() => run(() => window.axios.post(`/api/room-invitations/${item.id}/cancel`), '邀請已取消。')}>取消</button>
                                     )}
                                 />
                             </section>
@@ -181,8 +181,8 @@ export default function HouseShow({ housePublicId }) {
                                     renderText={(item) => `${item.requester.display_name} · ${item.status}`}
                                     renderActions={(item) => isOwner && item.status === 'pending' && (
                                         <>
-                                            <button type="button" onClick={() => run(() => window.axios.post(`/api/house-join-requests/${item.id}/accept`), '申請已接受。')}>接受</button>
-                                            <button type="button" className="button-ghost" onClick={() => run(() => window.axios.post(`/api/house-join-requests/${item.id}/ignore`), '申請已忽略。')}>忽略</button>
+                                            <button type="button" onClick={() => run(() => window.axios.post(`/api/room-join-requests/${item.id}/accept`), '申請已接受。')}>接受</button>
+                                            <button type="button" className="button-ghost" onClick={() => run(() => window.axios.post(`/api/room-join-requests/${item.id}/ignore`), '申請已忽略。')}>忽略</button>
                                         </>
                                     )}
                                 />
@@ -213,7 +213,7 @@ export default function HouseShow({ housePublicId }) {
                                         </label>
                                         <button type="submit" disabled={processing}>加入設備</button>
                                     </form>
-                                ) : <p className="muted">僅屋主可加入設備</p>}
+                                ) : <p className="muted">僅房主可加入設備</p>}
                             </section>
                         </section>
 
@@ -234,15 +234,15 @@ export default function HouseShow({ housePublicId }) {
                                             <>
                                                 <div className="inline-form">
                                                     <input value={deviceNames[device.id] ?? ''} onChange={(event) => setDeviceNames({ ...deviceNames, [device.id]: event.target.value })} />
-                                                    <button type="button" onClick={() => run(() => window.axios.patch(`/api/houses/${housePublicId}/devices/${device.id}`, { name: deviceNames[device.id] ?? '' }), '設備已更新。')}>命名</button>
+                                                    <button type="button" onClick={() => run(() => window.axios.patch(`/api/rooms/${roomPublicId}/devices/${device.id}`, { name: deviceNames[device.id] ?? '' }), '設備已更新。')}>命名</button>
                                                 </div>
                                                 <div className="compact-actions">
                                                     {device.is_locked ? (
-                                                        <button type="button" className="button-ghost" onClick={() => run(() => window.axios.post(`/api/houses/${housePublicId}/devices/${device.id}/unlock`), '設備已解鎖。')}>解鎖</button>
+                                                        <button type="button" className="button-ghost" onClick={() => run(() => window.axios.post(`/api/rooms/${roomPublicId}/devices/${device.id}/unlock`), '設備已解鎖。')}>解鎖</button>
                                                     ) : (
-                                                        <button type="button" onClick={() => run(() => window.axios.post(`/api/houses/${housePublicId}/devices/${device.id}/lock`), '設備已上鎖。')}>上鎖</button>
+                                                        <button type="button" onClick={() => run(() => window.axios.post(`/api/rooms/${roomPublicId}/devices/${device.id}/lock`), '設備已上鎖。')}>上鎖</button>
                                                     )}
-                                                    <button type="button" className="button-danger" disabled={device.is_locked} onClick={() => run(() => window.axios.delete(`/api/houses/${housePublicId}/devices/${device.id}`), '設備已移除。')}>移除</button>
+                                                    <button type="button" className="button-danger" disabled={device.is_locked} onClick={() => run(() => window.axios.delete(`/api/rooms/${roomPublicId}/devices/${device.id}`), '設備已移除。')}>移除</button>
                                                 </div>
                                             </>
                                         )}

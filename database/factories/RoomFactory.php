@@ -2,15 +2,15 @@
 
 namespace Database\Factories;
 
-use App\Models\House;
+use App\Models\Room;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends Factory<House>
+ * @extends Factory<Room>
  */
-class HouseFactory extends Factory
+class RoomFactory extends Factory
 {
     public function definition(): array
     {

@@ -115,20 +115,20 @@ class User extends Authenticatable
         return $this->hasMany(AuthAttemptLog::class, 'account_key', 'public_id');
     }
 
-    public function houses(): BelongsToMany
+    public function rooms(): BelongsToMany
     {
-        return $this->belongsToMany(House::class)
+        return $this->belongsToMany(Room::class)
             ->withPivot(['id', 'role', 'joined_at'])
             ->withTimestamps();
     }
 
-    public function houseInvitations(): HasMany
+    public function roomInvitations(): HasMany
     {
-        return $this->hasMany(HouseInvitation::class, 'invitee_user_id');
+        return $this->hasMany(RoomInvitation::class, 'invitee_user_id');
     }
 
-    public function houseJoinRequests(): HasMany
+    public function roomJoinRequests(): HasMany
     {
-        return $this->hasMany(HouseJoinRequest::class, 'requester_user_id');
+        return $this->hasMany(RoomJoinRequest::class, 'requester_user_id');
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Database\Factories\HouseFactory;
+use Database\Factories\RoomFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,9 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
-class House extends Model
+class Room extends Model
 {
-    /** @use HasFactory<HouseFactory> */
+    /** @use HasFactory<RoomFactory> */
     use HasFactory, SoftDeletes;
 
     public const ROLE_OWNER = 'owner';
@@ -28,8 +28,8 @@ class House extends Model
 
     protected static function booted(): void
     {
-        static::creating(function (House $house): void {
-            $house->public_id ??= (string) Str::ulid();
+        static::creating(function (Room $room): void {
+            $room->public_id ??= (string) Str::ulid();
         });
     }
 
@@ -67,17 +67,17 @@ class House extends Model
 
     public function invitations(): HasMany
     {
-        return $this->hasMany(HouseInvitation::class);
+        return $this->hasMany(RoomInvitation::class);
     }
 
     public function joinRequests(): HasMany
     {
-        return $this->hasMany(HouseJoinRequest::class);
+        return $this->hasMany(RoomJoinRequest::class);
     }
 
     public function devices(): HasMany
     {
-        return $this->hasMany(Device::class, 'current_house_id');
+        return $this->hasMany(Device::class, 'current_room_id');
     }
 
     public function roleFor(User $user): ?string

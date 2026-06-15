@@ -12,12 +12,12 @@ return new class extends Migration
             $table->id();
             $table->string('serial_number')->unique();
             $table->string('secret_hash');
-            $table->foreignId('current_house_id')->nullable()->constrained('houses')->nullOnDelete();
+            $table->foreignId('current_room_id')->nullable()->constrained('rooms')->nullOnDelete();
             $table->string('name')->nullable();
             $table->boolean('is_locked')->default(false);
             $table->timestamps();
 
-            $table->index('current_house_id');
+            $table->index('current_room_id');
         });
     }
 

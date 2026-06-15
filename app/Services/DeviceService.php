@@ -5,16 +5,16 @@ namespace App\Services;
 use App\Exceptions\ApiException;
 use App\Models\Device;
 use App\Models\DeviceTransferLog;
-use App\Models\House;
+use App\Models\Room;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class DeviceService
 {
-    public function attachToHouse(House $house, User $actor, string $serialNumber, string $secret, ?string $name, bool $lock): Device
+    public function attachToRoom(Room $room, User $actor, string $serialNumber, string $secret, ?string $name, bool $lock): Device
     {
-        return DB::transaction(function () use ($house, $actor, $serialNumber, $secret, $name, $lock): Device {
+        return DB::transaction(function () use ($room, $actor, $serialNumber, $secret, $name, $lock): Device {
             $device = Device::query()
                 ->where('serial_number', $serialNumber)
                 ->lockForUpdate()
@@ -28,26 +28,26 @@ class DeviceService
                 throw new ApiException('Device secret is invalid.', 'DEVICE_SECRET_INVALID');
             }
 
-            if ((int) $device->current_house_id === (int) $house->id) {
-                throw new ApiException('Device already belongs to this house.', 'DEVICE_ALREADY_IN_THIS_HOUSE');
+            if ((int) $device->current_room_id === (int) $room->id) {
+                throw new ApiException('Device already belongs to this room.', 'DEVICE_ALREADY_IN_THIS_ROOM');
             }
 
-            if ($device->current_house_id !== null && $device->is_locked) {
+            if ($device->current_room_id !== null && $device->is_locked) {
                 throw new ApiException('Device is locked.', 'DEVICE_LOCKED');
             }
 
-            $fromHouseId = $device->current_house_id;
+            $fromRoomId = $device->current_room_id;
 
             $device->forceFill([
-                'current_house_id' => $house->id,
+                'current_room_id' => $room->id,
                 'name' => $name,
                 'is_locked' => $lock,
             ])->save();
 
             DeviceTransferLog::query()->create([
                 'device_id' => $device->id,
-                'from_house_id' => $fromHouseId,
-                'to_house_id' => $house->id,
+                'from_room_id' => $fromRoomId,
+                'to_room_id' => $room->id,
                 'transferred_by_user_id' => $actor->id,
                 'created_at' => now(),
             ]);
@@ -56,52 +56,52 @@ class DeviceService
         });
     }
 
-    public function rename(House $house, Device $device, ?string $name): Device
+    public function rename(Room $room, Device $device, ?string $name): Device
     {
-        $this->ensureDeviceInHouse($house, $device);
+        $this->ensureDeviceInRoom($room, $device);
 
         $device->forceFill(['name' => $name])->save();
 
         return $device->refresh();
     }
 
-    public function lock(House $house, Device $device): Device
+    public function lock(Room $room, Device $device): Device
     {
-        $this->ensureDeviceInHouse($house, $device);
+        $this->ensureDeviceInRoom($room, $device);
 
         $device->forceFill(['is_locked' => true])->save();
 
         return $device->refresh();
     }
 
-    public function unlock(House $house, Device $device): Device
+    public function unlock(Room $room, Device $device): Device
     {
-        $this->ensureDeviceInHouse($house, $device);
+        $this->ensureDeviceInRoom($room, $device);
 
         $device->forceFill(['is_locked' => false])->save();
 
         return $device->refresh();
     }
 
-    public function removeFromHouse(House $house, Device $device): void
+    public function removeFromRoom(Room $room, Device $device): void
     {
-        $this->ensureDeviceInHouse($house, $device);
+        $this->ensureDeviceInRoom($room, $device);
 
         if ($device->is_locked) {
             throw new ApiException('Device must be unlocked before removal.', 'DEVICE_MUST_UNLOCK_BEFORE_REMOVE');
         }
 
         $device->forceFill([
-            'current_house_id' => null,
+            'current_room_id' => null,
             'name' => null,
             'is_locked' => false,
         ])->save();
     }
 
-    private function ensureDeviceInHouse(House $house, Device $device): void
+    private function ensureDeviceInRoom(Room $room, Device $device): void
     {
-        if ((int) $device->current_house_id !== (int) $house->id) {
-            throw new ApiException('Device is not in this house.', 'DEVICE_NOT_IN_HOUSE', 404);
+        if ((int) $device->current_room_id !== (int) $room->id) {
+            throw new ApiException('Device is not in this room.', 'DEVICE_NOT_IN_ROOM', 404);
         }
     }
 }

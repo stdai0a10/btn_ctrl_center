@@ -17,7 +17,7 @@ class DeviceFactory extends Factory
         return [
             'serial_number' => 'DEV-'.Str::upper(Str::random(10)),
             'secret_hash' => Hash::make('device-secret'),
-            'current_house_id' => null,
+            'current_room_id' => null,
             'name' => null,
             'is_locked' => false,
         ];

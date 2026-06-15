@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class HouseInvitation extends Model
+class RoomInvitation extends Model
 {
     public const STATUS_PENDING = 'pending';
 
@@ -16,7 +16,7 @@ class HouseInvitation extends Model
     public const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
-        'house_id',
+        'room_id',
         'inviter_user_id',
         'invitee_user_id',
         'status',
@@ -34,9 +34,9 @@ class HouseInvitation extends Model
         ];
     }
 
-    public function house(): BelongsTo
+    public function room(): BelongsTo
     {
-        return $this->belongsTo(House::class);
+        return $this->belongsTo(Room::class);
     }
 
     public function inviter(): BelongsTo

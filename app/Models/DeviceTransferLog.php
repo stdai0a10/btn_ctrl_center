@@ -11,8 +11,8 @@ class DeviceTransferLog extends Model
 
     protected $fillable = [
         'device_id',
-        'from_house_id',
-        'to_house_id',
+        'from_room_id',
+        'to_room_id',
         'transferred_by_user_id',
         'created_at',
     ];
@@ -29,14 +29,14 @@ class DeviceTransferLog extends Model
         return $this->belongsTo(Device::class);
     }
 
-    public function fromHouse(): BelongsTo
+    public function fromRoom(): BelongsTo
     {
-        return $this->belongsTo(House::class, 'from_house_id');
+        return $this->belongsTo(Room::class, 'from_room_id');
     }
 
-    public function toHouse(): BelongsTo
+    public function toRoom(): BelongsTo
     {
-        return $this->belongsTo(House::class, 'to_house_id');
+        return $this->belongsTo(Room::class, 'to_room_id');
     }
 
     public function transferredBy(): BelongsTo

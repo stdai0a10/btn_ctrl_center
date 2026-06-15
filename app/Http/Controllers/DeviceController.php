@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Device;
-use App\Models\House;
+use App\Models\Room;
 use App\Services\DeviceService;
 use Illuminate\Http\Request;
 
@@ -13,11 +13,11 @@ class DeviceController extends ApiController
     {
     }
 
-    public function index(Request $request, House $house)
+    public function index(Request $request, Room $room)
     {
-        $this->authorize('view', $house);
+        $this->authorize('view', $room);
 
-        $devices = $house->devices()
+        $devices = $room->devices()
             ->latest()
             ->get()
             ->map(fn (Device $device): array => $this->payload($device));
@@ -25,9 +25,9 @@ class DeviceController extends ApiController
         return $this->response($devices);
     }
 
-    public function store(Request $request, House $house)
+    public function store(Request $request, Room $room)
     {
-        $this->authorize('manageDevices', $house);
+        $this->authorize('manageDevices', $room);
 
         $validated = $request->validate([
             'serial_number' => ['required', 'string', 'max:100'],
@@ -36,8 +36,8 @@ class DeviceController extends ApiController
             'lock' => ['nullable', 'boolean'],
         ]);
 
-        $device = $this->devices->attachToHouse(
-            $house,
+        $device = $this->devices->attachToRoom(
+            $room,
             $request->user(),
             $validated['serial_number'],
             $validated['secret'],
@@ -45,45 +45,45 @@ class DeviceController extends ApiController
             (bool) ($validated['lock'] ?? false),
         );
 
-        return $this->response($this->payload($device), '設備已加入房屋。', 201);
+        return $this->response($this->payload($device), '設備已加入房間。', 201);
     }
 
-    public function update(Request $request, House $house, Device $device)
+    public function update(Request $request, Room $room, Device $device)
     {
-        $this->authorize('manageDevices', $house);
+        $this->authorize('manageDevices', $room);
 
         $validated = $request->validate([
             'name' => ['nullable', 'string', 'max:100'],
         ]);
 
-        $device = $this->devices->rename($house, $device, $validated['name'] ?? null);
+        $device = $this->devices->rename($room, $device, $validated['name'] ?? null);
 
         return $this->response($this->payload($device), '設備已更新。');
     }
 
-    public function destroy(Request $request, House $house, Device $device)
+    public function destroy(Request $request, Room $room, Device $device)
     {
-        $this->authorize('manageDevices', $house);
+        $this->authorize('manageDevices', $room);
 
-        $this->devices->removeFromHouse($house, $device);
+        $this->devices->removeFromRoom($room, $device);
 
         return $this->response(null, '設備已移除。');
     }
 
-    public function lock(Request $request, House $house, Device $device)
+    public function lock(Request $request, Room $room, Device $device)
     {
-        $this->authorize('manageDevices', $house);
+        $this->authorize('manageDevices', $room);
 
-        $device = $this->devices->lock($house, $device);
+        $device = $this->devices->lock($room, $device);
 
         return $this->response($this->payload($device), '設備已上鎖。');
     }
 
-    public function unlock(Request $request, House $house, Device $device)
+    public function unlock(Request $request, Room $room, Device $device)
     {
-        $this->authorize('manageDevices', $house);
+        $this->authorize('manageDevices', $room);
 
-        $device = $this->devices->unlock($house, $device);
+        $device = $this->devices->unlock($room, $device);
 
         return $this->response($this->payload($device), '設備已解鎖。');
     }
@@ -93,7 +93,7 @@ class DeviceController extends ApiController
         return [
             'id' => $device->id,
             'serial_number' => $device->serial_number,
-            'current_house_id' => $device->current_house_id,
+            'current_room_id' => $device->current_room_id,
             'name' => $device->name,
             'is_locked' => $device->is_locked,
             'created_at' => $device->created_at?->toISOString(),

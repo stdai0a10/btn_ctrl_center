@@ -3,23 +3,23 @@
 namespace App\Policies;
 
 use App\Models\Device;
-use App\Models\House;
+use App\Models\Room;
 use App\Models\User;
 
 class DevicePolicy
 {
-    public function viewAny(User $user, House $house): bool
+    public function viewAny(User $user, Room $room): bool
     {
-        return $house->isMember($user);
+        return $room->isMember($user);
     }
 
-    public function manage(User $user, House $house): bool
+    public function manage(User $user, Room $room): bool
     {
-        return $house->isOwner($user);
+        return $room->isOwner($user);
     }
 
     public function view(User $user, Device $device): bool
     {
-        return $device->currentHouse?->isMember($user) ?? false;
+        return $device->currentRoom?->isMember($user) ?? false;
     }
 }

@@ -16,7 +16,7 @@ class Device extends Model
     protected $fillable = [
         'serial_number',
         'secret_hash',
-        'current_house_id',
+        'current_room_id',
         'name',
         'is_locked',
     ];
@@ -32,9 +32,9 @@ class Device extends Model
         ];
     }
 
-    public function currentHouse(): BelongsTo
+    public function currentRoom(): BelongsTo
     {
-        return $this->belongsTo(House::class, 'current_house_id');
+        return $this->belongsTo(Room::class, 'current_room_id');
     }
 
     public function transferLogs(): HasMany

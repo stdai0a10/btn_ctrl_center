@@ -60,11 +60,11 @@ class LoginTest extends TestCase
             ->postJson('/api/auth/login/email', [
             'email' => 'redirect@example.com',
             'password' => 'password-password',
-            'redirect' => '/houses?tab=devices',
+            'redirect' => '/rooms?tab=devices',
         ])->assertOk()
-            ->assertJsonPath('data.redirect_to', '/houses?tab=devices');
+            ->assertJsonPath('data.redirect_to', '/rooms?tab=devices');
 
-        $this->withHeader('referer', 'http://localhost:8000/houses')
+        $this->withHeader('referer', 'http://localhost:8000/rooms')
             ->postJson('/api/auth/logout')
             ->assertOk();
 
@@ -88,14 +88,14 @@ class LoginTest extends TestCase
         ]);
         $user->forceFill(['primary_email_id' => $email->id])->save();
 
-        $this->get('/houses')->assertRedirect('/login');
+        $this->get('/rooms')->assertRedirect('/login');
 
         $this->withHeader('referer', 'http://localhost:8000/login')
             ->postJson('/api/auth/login/email', [
             'email' => 'intended@example.com',
             'password' => 'password-password',
         ])->assertOk()
-            ->assertJsonPath('data.redirect_to', '/houses');
+            ->assertJsonPath('data.redirect_to', '/rooms');
     }
 
     public function test_unverified_email_cannot_login(): void

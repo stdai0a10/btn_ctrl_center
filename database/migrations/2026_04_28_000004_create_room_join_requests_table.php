@@ -8,9 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('house_join_requests', function (Blueprint $table): void {
+        Schema::create('room_join_requests', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('house_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('room_id')->constrained()->cascadeOnDelete();
             $table->foreignId('requester_user_id')->constrained('users')->cascadeOnDelete();
             $table->string('status', 20)->default('pending')->index();
             $table->foreignId('approved_by_user_id')->nullable()->constrained('users')->nullOnDelete();
@@ -19,13 +19,13 @@ return new class extends Migration
             $table->timestamp('ignored_at')->nullable();
             $table->timestamps();
 
-            $table->index(['house_id', 'status']);
+            $table->index(['room_id', 'status']);
             $table->index(['requester_user_id', 'status']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('house_join_requests');
+        Schema::dropIfExists('room_join_requests');
     }
 };

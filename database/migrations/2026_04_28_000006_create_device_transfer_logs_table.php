@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::create('device_transfer_logs', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('device_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('from_house_id')->nullable()->constrained('houses')->nullOnDelete();
-            $table->foreignId('to_house_id')->nullable()->constrained('houses')->nullOnDelete();
+            $table->foreignId('from_room_id')->nullable()->constrained('rooms')->nullOnDelete();
+            $table->foreignId('to_room_id')->nullable()->constrained('rooms')->nullOnDelete();
             $table->foreignId('transferred_by_user_id')->constrained('users')->cascadeOnDelete();
             $table->timestamp('created_at')->useCurrent();
 
