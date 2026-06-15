@@ -18,6 +18,7 @@ class LoginController extends ApiController
         $validated = $request->validate([
             'email' => ['required', 'email:rfc', 'max:255'],
             'password' => ['required', 'string'],
+            'redirect' => ['nullable', 'string', 'max:2048'],
         ]);
 
         $email = mb_strtolower(trim($validated['email']));
@@ -54,7 +55,10 @@ class LoginController extends ApiController
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
-        return $this->response($this->userPayload($user), '登入成功。');
+        return $this->response([
+            ...$this->userPayload($user),
+            'redirect_to' => $this->redirectAfterLogin($request),
+        ], '登入成功。');
     }
 
     public function destroy(Request $request)
@@ -99,6 +103,30 @@ class LoginController extends ApiController
             'has_password' => $user->password !== null,
             'providers' => $user->authProviders->pluck('provider')->values(),
         ];
+    }
+
+    private function redirectAfterLogin(Request $request): string
+    {
+        $intended = $request->session()->pull('url.intended');
+        $redirect = is_string($intended) && $intended !== ''
+            ? $intended
+            : $request->input('redirect', '/');
+
+        if (! is_string($redirect) || $redirect === '') {
+            return '/';
+        }
+
+        $path = parse_url($redirect, PHP_URL_PATH) ?: '/';
+        $query = parse_url($redirect, PHP_URL_QUERY);
+        $fragment = parse_url($redirect, PHP_URL_FRAGMENT);
+
+        if (! str_starts_with($path, '/')) {
+            return '/';
+        }
+
+        return $path
+            .($query ? '?'.$query : '')
+            .($fragment ? '#'.$fragment : '');
     }
 
     private function logAttempt(string $type, string $accountKey, ?string $ip, bool $isSuccess): void

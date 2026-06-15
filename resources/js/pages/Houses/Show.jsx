@@ -1,5 +1,6 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
+import AppLayout from '../../layouts/AppLayout';
 import { errorMessage, formErrors } from '../../lib/http';
 
 const emptyDeviceForm = { serial_number: '', secret: '', name: '', lock: false };
@@ -105,15 +106,7 @@ export default function HouseShow({ housePublicId }) {
     return (
         <>
             <Head title={house ? house.name : '房屋詳情'} />
-            <main className="app-shell">
-                <nav className="topbar">
-                    <Link href="/houses" className="brand">房屋管理</Link>
-                    <div className="topbar-links">
-                        <Link href="/house-invitations">邀請</Link>
-                        <Link href="/account/profile">帳號</Link>
-                    </div>
-                </nav>
-
+            <AppLayout>
                 {loading && <p className="muted">載入中...</p>}
                 {!loading && house && (
                     <>
@@ -259,7 +252,7 @@ export default function HouseShow({ housePublicId }) {
                         </section>
                     </>
                 )}
-            </main>
+            </AppLayout>
         </>
     );
 }

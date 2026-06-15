@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import AppLayout from '../../layouts/AppLayout';
 import { formErrors } from '../../lib/http';
 
 export default function HousesIndex() {
@@ -42,18 +43,11 @@ export default function HousesIndex() {
     return (
         <>
             <Head title="房屋管理" />
-            <main className="app-shell">
-                <nav className="topbar">
-                    <Link href="/" className="brand">Button Control Center</Link>
-                    <div className="topbar-links">
-                        <Link href="/house-invitations">邀請</Link>
-                        <Link href="/account/profile">帳號</Link>
-                    </div>
-                </nav>
-
+            <AppLayout>
                 <section className="page-header">
                     <p className="eyebrow">Houses</p>
                     <h1>房屋管理</h1>
+                    <Link className="text-link" href="/house-invitations">查看邀請與申請</Link>
                 </section>
 
                 <section className="split-layout">
@@ -89,7 +83,7 @@ export default function HousesIndex() {
                         </div>
                     </section>
                 </section>
-            </main>
+            </AppLayout>
         </>
     );
 }

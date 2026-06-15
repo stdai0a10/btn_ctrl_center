@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import AppLayout from '../../layouts/AppLayout';
 
 export default function Email() {
     const [profile, setProfile] = useState(null);
@@ -30,7 +31,7 @@ export default function Email() {
     return (
         <>
             <Head title="EMAIL 設定" />
-            <main className="auth-shell">
+            <AppLayout contentClassName="auth-layout-main">
                 <section className="auth-card">
                     <p className="eyebrow">Email Settings</p>
                     <h1>EMAIL</h1>
@@ -61,7 +62,7 @@ export default function Email() {
 
                     <Link className="text-link" href="/account/profile">返回帳號資料</Link>
                 </section>
-            </main>
+            </AppLayout>
         </>
     );
 }

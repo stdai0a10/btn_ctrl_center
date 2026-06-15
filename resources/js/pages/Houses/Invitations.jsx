@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import AppLayout from '../../layouts/AppLayout';
 import { errorMessage } from '../../lib/http';
 
 export default function Invitations() {
@@ -40,15 +41,11 @@ export default function Invitations() {
     return (
         <>
             <Head title="我的邀請" />
-            <main className="app-shell">
-                <nav className="topbar">
-                    <Link href="/houses" className="brand">房屋管理</Link>
-                    <Link href="/account/profile">帳號</Link>
-                </nav>
-
+            <AppLayout>
                 <section className="page-header">
                     <p className="eyebrow">Invitations</p>
                     <h1>我的邀請</h1>
+                    <Link className="text-link" href="/houses">返回設備管理</Link>
                 </section>
 
                 {message && <div className="notice success">{message}</div>}
@@ -78,7 +75,7 @@ export default function Invitations() {
                     <RequestPanel title="已送出邀請" items={invitations.sent} empty="沒有送出邀請" />
                     <RequestPanel title="收到申請" items={joinRequests.received} empty="沒有收到申請" />
                 </section>
-            </main>
+            </AppLayout>
         </>
     );
 }
