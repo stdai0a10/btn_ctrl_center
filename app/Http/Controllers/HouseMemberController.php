@@ -49,6 +49,17 @@ class HouseMemberController extends ApiController
         return $this->response(null, '成員身份已更新。');
     }
 
+    public function leave(Request $request, House $house)
+    {
+        $this->authorize('view', $house);
+
+        $deleted = $this->members->leave($house, $request->user());
+
+        return $this->response([
+            'house_deleted' => $deleted,
+        ], $deleted ? '已退出並刪除房屋。' : '已退出房屋。');
+    }
+
     private function payload(User $member): array
     {
         return [

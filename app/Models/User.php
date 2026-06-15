@@ -121,4 +121,14 @@ class User extends Authenticatable
             ->withPivot(['id', 'role', 'joined_at'])
             ->withTimestamps();
     }
+
+    public function houseInvitations(): HasMany
+    {
+        return $this->hasMany(HouseInvitation::class, 'invitee_user_id');
+    }
+
+    public function houseJoinRequests(): HasMany
+    {
+        return $this->hasMany(HouseJoinRequest::class, 'requester_user_id');
+    }
 }

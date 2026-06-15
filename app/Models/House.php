@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -57,6 +58,16 @@ class House extends Model
     public function residents(): BelongsToMany
     {
         return $this->members()->wherePivot('role', self::ROLE_RESIDENT);
+    }
+
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(HouseInvitation::class);
+    }
+
+    public function joinRequests(): HasMany
+    {
+        return $this->hasMany(HouseJoinRequest::class);
     }
 
     public function roleFor(User $user): ?string

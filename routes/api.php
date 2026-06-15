@@ -7,7 +7,9 @@ use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\Account\ProfileController;
 use App\Http\Controllers\Account\ProviderBindingController;
 use App\Http\Controllers\HouseController;
+use App\Http\Controllers\HouseInvitationController;
 use App\Http\Controllers\HouseMemberController;
+use App\Http\Controllers\HouseJoinRequestController;
 use App\Http\Controllers\Security\ReauthController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -57,5 +59,18 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('houses', HouseController::class);
     Route::get('/houses/{house}/members', [HouseMemberController::class, 'index']);
     Route::delete('/houses/{house}/members/{user:public_id}', [HouseMemberController::class, 'destroy']);
+    Route::post('/houses/{house}/leave', [HouseMemberController::class, 'leave']);
     Route::patch('/houses/{house}/members/{user:public_id}/role', [HouseMemberController::class, 'updateRole']);
+
+    Route::get('/house-invitations', [HouseInvitationController::class, 'index']);
+    Route::post('/houses/{house}/invitations', [HouseInvitationController::class, 'store']);
+    Route::post('/house-invitations/{invitation}/accept', [HouseInvitationController::class, 'accept']);
+    Route::post('/house-invitations/{invitation}/ignore', [HouseInvitationController::class, 'ignore']);
+    Route::post('/house-invitations/{invitation}/cancel', [HouseInvitationController::class, 'cancel']);
+
+    Route::get('/house-join-requests', [HouseJoinRequestController::class, 'index']);
+    Route::post('/houses/{house}/join-requests', [HouseJoinRequestController::class, 'store']);
+    Route::post('/house-join-requests/{joinRequest}/accept', [HouseJoinRequestController::class, 'accept']);
+    Route::post('/house-join-requests/{joinRequest}/ignore', [HouseJoinRequestController::class, 'ignore']);
+    Route::post('/house-join-requests/{joinRequest}/cancel', [HouseJoinRequestController::class, 'cancel']);
 });

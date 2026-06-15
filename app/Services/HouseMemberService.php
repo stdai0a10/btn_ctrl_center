@@ -62,6 +62,37 @@ class HouseMemberService
         });
     }
 
+    public function leave(House $house, User $member): bool
+    {
+        return DB::transaction(function () use ($house, $member): bool {
+            $membership = $this->lockedMembership($house, $member);
+
+            if ($membership === null) {
+                throw new ApiException('User is not a house member.', 'HOUSE_MEMBER_NOT_FOUND', 404);
+            }
+
+            $ownerCount = $this->ownerCount($house);
+            $memberCount = DB::table('house_user')
+                ->where('house_id', $house->id)
+                ->lockForUpdate()
+                ->count();
+
+            if ($membership->pivot->role === House::ROLE_OWNER && $ownerCount <= 1 && $memberCount > 1) {
+                throw new ApiException('Cannot leave the house without an owner.', 'HOUSE_LAST_OWNER_REQUIRED');
+            }
+
+            $house->members()->detach($member->id);
+
+            if ($membership->pivot->role === House::ROLE_OWNER && $ownerCount <= 1 && $memberCount === 1) {
+                $house->delete();
+
+                return true;
+            }
+
+            return false;
+        });
+    }
+
     private function lockedMembership(House $house, User $member): ?User
     {
         return $house->members()
