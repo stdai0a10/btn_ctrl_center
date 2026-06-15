@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Device;
 use App\Models\House;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +36,14 @@ class HouseService
     public function delete(House $house): void
     {
         DB::transaction(function () use ($house): void {
+            Device::query()
+                ->where('current_house_id', $house->id)
+                ->update([
+                    'current_house_id' => null,
+                    'name' => null,
+                    'is_locked' => false,
+                ]);
+
             $house->members()->detach();
             $house->delete();
         });

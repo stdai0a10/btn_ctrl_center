@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\ApiException;
+use App\Models\Device;
 use App\Models\House;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -84,6 +85,14 @@ class HouseMemberService
             $house->members()->detach($member->id);
 
             if ($membership->pivot->role === House::ROLE_OWNER && $ownerCount <= 1 && $memberCount === 1) {
+                Device::query()
+                    ->where('current_house_id', $house->id)
+                    ->update([
+                        'current_house_id' => null,
+                        'name' => null,
+                        'is_locked' => false,
+                    ]);
+
                 $house->delete();
 
                 return true;

@@ -70,6 +70,11 @@ class House extends Model
         return $this->hasMany(HouseJoinRequest::class);
     }
 
+    public function devices(): HasMany
+    {
+        return $this->hasMany(Device::class, 'current_house_id');
+    }
+
     public function roleFor(User $user): ?string
     {
         $member = $this->members->firstWhere('id', $user->id);

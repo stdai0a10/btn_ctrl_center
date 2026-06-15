@@ -6,6 +6,7 @@ use App\Http\Controllers\Account\EmailController;
 use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\Account\ProfileController;
 use App\Http\Controllers\Account\ProviderBindingController;
+use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\HouseController;
 use App\Http\Controllers\HouseInvitationController;
 use App\Http\Controllers\HouseMemberController;
@@ -73,4 +74,11 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/house-join-requests/{joinRequest}/accept', [HouseJoinRequestController::class, 'accept']);
     Route::post('/house-join-requests/{joinRequest}/ignore', [HouseJoinRequestController::class, 'ignore']);
     Route::post('/house-join-requests/{joinRequest}/cancel', [HouseJoinRequestController::class, 'cancel']);
+
+    Route::get('/houses/{house}/devices', [DeviceController::class, 'index']);
+    Route::post('/houses/{house}/devices', [DeviceController::class, 'store']);
+    Route::patch('/houses/{house}/devices/{device}', [DeviceController::class, 'update']);
+    Route::delete('/houses/{house}/devices/{device}', [DeviceController::class, 'destroy']);
+    Route::post('/houses/{house}/devices/{device}/lock', [DeviceController::class, 'lock']);
+    Route::post('/houses/{house}/devices/{device}/unlock', [DeviceController::class, 'unlock']);
 });
