@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Device;
 use App\Models\House;
+use App\Models\HouseInvitation;
+use App\Models\HouseJoinRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -42,6 +44,22 @@ class HouseService
                     'current_house_id' => null,
                     'name' => null,
                     'is_locked' => false,
+                ]);
+
+            HouseInvitation::query()
+                ->where('house_id', $house->id)
+                ->where('status', HouseInvitation::STATUS_PENDING)
+                ->update([
+                    'status' => HouseInvitation::STATUS_CANCELLED,
+                    'cancelled_at' => now(),
+                ]);
+
+            HouseJoinRequest::query()
+                ->where('house_id', $house->id)
+                ->where('status', HouseJoinRequest::STATUS_PENDING)
+                ->update([
+                    'status' => HouseJoinRequest::STATUS_CANCELLED,
+                    'cancelled_at' => now(),
                 ]);
 
             $house->members()->detach();

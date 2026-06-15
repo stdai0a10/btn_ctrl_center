@@ -50,6 +50,11 @@ class House extends Model
             ->withTimestamps();
     }
 
+    public function users(): BelongsToMany
+    {
+        return $this->members();
+    }
+
     public function owners(): BelongsToMany
     {
         return $this->members()->wherePivot('role', self::ROLE_OWNER);

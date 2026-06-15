@@ -12,19 +12,23 @@ class HouseJoinRequestService
 {
     public function request(House $house, User $requester): HouseJoinRequest
     {
-        if ($house->isMember($requester)) {
-            throw new ApiException('User is already a house member.', 'HOUSE_MEMBER_ALREADY_EXISTS');
-        }
+        return DB::transaction(function () use ($house, $requester): HouseJoinRequest {
+            House::query()->whereKey($house->id)->lockForUpdate()->firstOrFail();
 
-        if ($this->pendingRequest($house, $requester)->exists()) {
-            throw new ApiException('A pending join request already exists.', 'HOUSE_JOIN_REQUEST_ALREADY_PENDING');
-        }
+            if ($house->isMember($requester)) {
+                throw new ApiException('User is already a house member.', 'HOUSE_MEMBER_ALREADY_EXISTS');
+            }
 
-        return HouseJoinRequest::query()->create([
-            'house_id' => $house->id,
-            'requester_user_id' => $requester->id,
-            'status' => HouseJoinRequest::STATUS_PENDING,
-        ])->load(['house', 'requester']);
+            if ($this->pendingRequest($house, $requester)->lockForUpdate()->exists()) {
+                throw new ApiException('A pending join request already exists.', 'HOUSE_JOIN_REQUEST_ALREADY_PENDING');
+            }
+
+            return HouseJoinRequest::query()->create([
+                'house_id' => $house->id,
+                'requester_user_id' => $requester->id,
+                'status' => HouseJoinRequest::STATUS_PENDING,
+            ])->load(['house', 'requester']);
+        });
     }
 
     public function cancel(HouseJoinRequest $request, User $requester): void

@@ -12,20 +12,24 @@ class HouseInvitationService
 {
     public function invite(House $house, User $inviter, User $invitee): HouseInvitation
     {
-        if ($house->isMember($invitee)) {
-            throw new ApiException('User is already a house member.', 'HOUSE_MEMBER_ALREADY_EXISTS');
-        }
+        return DB::transaction(function () use ($house, $inviter, $invitee): HouseInvitation {
+            House::query()->whereKey($house->id)->lockForUpdate()->firstOrFail();
 
-        if ($this->pendingInvitation($house, $invitee)->exists()) {
-            throw new ApiException('A pending invitation already exists.', 'HOUSE_INVITATION_ALREADY_PENDING');
-        }
+            if ($house->isMember($invitee)) {
+                throw new ApiException('User is already a house member.', 'HOUSE_MEMBER_ALREADY_EXISTS');
+            }
 
-        return HouseInvitation::query()->create([
-            'house_id' => $house->id,
-            'inviter_user_id' => $inviter->id,
-            'invitee_user_id' => $invitee->id,
-            'status' => HouseInvitation::STATUS_PENDING,
-        ])->load(['house', 'inviter', 'invitee']);
+            if ($this->pendingInvitation($house, $invitee)->lockForUpdate()->exists()) {
+                throw new ApiException('A pending invitation already exists.', 'HOUSE_INVITATION_ALREADY_PENDING');
+            }
+
+            return HouseInvitation::query()->create([
+                'house_id' => $house->id,
+                'inviter_user_id' => $inviter->id,
+                'invitee_user_id' => $invitee->id,
+                'status' => HouseInvitation::STATUS_PENDING,
+            ])->load(['house', 'inviter', 'invitee']);
+        });
     }
 
     public function cancel(HouseInvitation $invitation): void
