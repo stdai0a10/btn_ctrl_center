@@ -1,16 +1,18 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { DoorOpen, LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen, ShieldAlert, Users } from 'lucide-react';
+import { DoorOpen, LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen, ShieldAlert, ShieldCheck, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const navItems = [
-    { label: '管理首頁', href: '/manage', icon: LayoutDashboard },
-    { label: '使用者一覽', href: '/manage/users', icon: Users },
-    { label: '房間一覽', href: '/manage/rooms', icon: DoorOpen },
-    { label: '登入失敗紀錄', href: '/manage/audit/login-failures', icon: ShieldAlert },
+    { label: '管理首頁', href: '/manage', icon: LayoutDashboard, permission: 'manage.dashboard.view' },
+    { label: '使用者一覽', href: '/manage/users', icon: Users, permission: 'manage.users.view' },
+    { label: '房間一覽', href: '/manage/rooms', icon: DoorOpen, permission: 'manage.rooms.view' },
+    { label: '服務管理員', href: '/manage/service-managers', icon: ShieldCheck, permission: 'manage.service_managers.view' },
+    { label: '登入失敗紀錄', href: '/manage/audit/login-failures', icon: ShieldAlert, permission: 'audit.login_failures.view' },
 ];
 
 export default function ManageLayout({ children }) {
-    const { url } = usePage();
+    const { url, props } = usePage();
+    const permissions = props.auth?.manage_permissions ?? [];
     const [collapsed, setCollapsed] = useState(() => window.localStorage.getItem('manageSidebarCollapsed') === 'true');
     const [processing, setProcessing] = useState(false);
     const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
@@ -52,7 +54,7 @@ export default function ManageLayout({ children }) {
                 </div>
 
                 <nav className="manage-nav">
-                    {navItems.map((item) => {
+                    {navItems.filter((item) => permissions.includes(item.permission)).map((item) => {
                         const Icon = item.icon;
 
                         return (

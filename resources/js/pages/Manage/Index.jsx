@@ -68,6 +68,14 @@ export default function ManageIndex() {
                                             <span>查看服務內所有房間與房間成員</span>
                                         </div>
                                     </Link>
+                                    {admin.permissions.includes('manage.service_managers.view') && (
+                                        <Link className="list-item manage-link-item" href="/manage/service-managers">
+                                            <div>
+                                                <strong>服務管理員</strong>
+                                                <span>授予、撤銷與查看服務管理員身分</span>
+                                            </div>
+                                        </Link>
+                                    )}
                                     <Link className="list-item manage-link-item" href="/manage/audit/login-failures">
                                         <div>
                                             <strong>登入失敗紀錄</strong>

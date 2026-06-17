@@ -46,6 +46,14 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
         Route::get('/rooms/{room_public_id}', fn (string $roomPublicId) => Inertia::render('Manage/Rooms/Show', [
             'roomPublicId' => $roomPublicId,
         ]))->name('rooms.show');
+        Route::get('/service-managers', fn () => Inertia::render('Manage/ServiceManagers/Index'))
+            ->middleware('permission:manage.service_managers.view')
+            ->name('service-managers.index');
+        Route::get('/service-managers/{user_public_id}', fn (string $userPublicId) => Inertia::render('Manage/ServiceManagers/Show', [
+            'userPublicId' => $userPublicId,
+        ]))
+            ->middleware('permission:manage.service_managers.detail')
+            ->name('service-managers.show');
         Route::get('/audit/login-failures', fn () => Inertia::render('Manage/Audit/LoginFailures'))->name('audit.login-failures');
     });
 
