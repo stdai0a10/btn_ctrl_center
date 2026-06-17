@@ -41,13 +41,14 @@ class AuditController extends ApiController
         ]);
 
         $logs = ManageActionLog::query()
-            ->with('user')
+            ->with('actor')
             ->latest('created_at')
             ->paginate(20, ['*'], 'page', $validated['page'] ?? 1);
 
         $logs->getCollection()->transform(fn (ManageActionLog $log): array => [
             'id' => $log->id,
-            'user_public_id' => $log->user?->public_id,
+            'actor_type' => $log->actor_type,
+            'user_public_id' => $log->actor?->public_id,
             'action' => $log->action,
             'target_type' => $log->target_type,
             'target_public_id' => $log->target_public_id,

@@ -2,15 +2,17 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\ManageActionLog;
 use App\Models\Room;
 use App\Models\User;
+use App\Services\Manage\ManageActionLogger;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class LogManageAction
 {
+    public function __construct(private readonly ManageActionLogger $logger) {}
+
     /**
      * @param  Closure(Request): Response  $next
      */
@@ -19,27 +21,38 @@ class LogManageAction
         $response = $next($request);
         $user = $request->user();
 
-        if ($user !== null) {
+        $action = $this->action($request);
+
+        if ($user !== null && $action !== null && $response->isSuccessful()) {
             [$targetType, $targetId, $targetPublicId] = $this->target($request);
 
-            ManageActionLog::query()->create([
-                'user_id' => $user->id,
-                'action' => $request->route()?->getName() ?? $request->method().' '.$request->path(),
-                'target_type' => $targetType,
-                'target_id' => $targetId,
-                'target_public_id' => $targetPublicId,
-                'ip_address' => $request->ip(),
-                'user_agent' => substr((string) $request->userAgent(), 0, 2000),
-                'metadata' => [
+            $this->logger->forManageUser(
+                request: $request,
+                action: $action,
+                targetType: $targetType,
+                targetId: $targetId,
+                targetPublicId: $targetPublicId,
+                metadata: [
                     'method' => $request->method(),
                     'path' => '/'.$request->path(),
                     'query' => $request->query(),
                     'status' => $response->getStatusCode(),
                 ],
-            ]);
+            );
         }
 
         return $response;
+    }
+
+    private function action(Request $request): ?string
+    {
+        return match ($request->route()?->getName()) {
+            'manage.api.users.show', 'manage.api.users.rooms' => 'users.detail.view',
+            'manage.api.rooms.show', 'manage.api.rooms.users' => 'rooms.detail.view',
+            'manage.api.audit.login-failures' => 'audit.login_failures.view',
+            'manage.api.audit.manage-actions' => 'audit.manage_actions.view',
+            default => null,
+        };
     }
 
     /**

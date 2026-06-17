@@ -1,12 +1,12 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
-use App\Http\Controllers\Manage\AuthController as ManageAuthController;
 use App\Http\Controllers\Manage\AuditController as ManageAuditController;
+use App\Http\Controllers\Manage\AuthController as ManageAuthController;
 use App\Http\Controllers\Manage\DashboardController as ManageDashboardController;
 use App\Http\Controllers\Manage\RoomController as ManageRoomController;
 use App\Http\Controllers\Manage\UserController as ManageUserController;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::get('/', function () {
     return Inertia::render('Home', [
@@ -79,8 +79,8 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
                 ->name('rooms.users');
             Route::get('/audit/login-failures', [ManageAuditController::class, 'loginFailures'])
                 ->name('audit.login-failures');
-            Route::get('/audit/actions', [ManageAuditController::class, 'actions'])
-                ->name('audit.actions');
+            Route::get('/audit/manage-actions', [ManageAuditController::class, 'actions'])
+                ->name('audit.manage-actions');
         });
     });
 });

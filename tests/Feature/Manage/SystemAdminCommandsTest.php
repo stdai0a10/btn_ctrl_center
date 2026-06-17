@@ -31,6 +31,8 @@ class SystemAdminCommandsTest extends TestCase
 
         $this->assertTrue($user->refresh()->hasRole(ManagementRbac::SYSTEM_ADMIN_ROLE));
         $this->assertDatabaseHas('manage_action_logs', [
+            'actor_type' => 'cli',
+            'actor_user_id' => null,
             'action' => 'system_admin.grant',
             'target_public_id' => $user->public_id,
         ]);
@@ -59,6 +61,8 @@ class SystemAdminCommandsTest extends TestCase
 
         $this->assertFalse($user->refresh()->hasRole(ManagementRbac::SYSTEM_ADMIN_ROLE));
         $this->assertDatabaseHas('manage_action_logs', [
+            'actor_type' => 'cli',
+            'actor_user_id' => null,
             'action' => 'system_admin.revoke',
             'target_public_id' => $user->public_id,
         ]);

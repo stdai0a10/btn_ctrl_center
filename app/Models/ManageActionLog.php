@@ -10,7 +10,8 @@ class ManageActionLog extends Model
     public const UPDATED_AT = null;
 
     protected $fillable = [
-        'user_id',
+        'actor_type',
+        'actor_user_id',
         'action',
         'target_type',
         'target_id',
@@ -27,8 +28,8 @@ class ManageActionLog extends Model
         ];
     }
 
-    public function user(): BelongsTo
+    public function actor(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'actor_user_id');
     }
 }

@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands\SystemAdmin;
 
-use App\Models\ManageActionLog;
 use App\Models\User;
+use App\Services\Manage\ManageActionLogger;
 use App\Support\ManagementRbac;
 use Illuminate\Console\Command;
 
@@ -34,21 +34,17 @@ class RemoveSystemAdmin extends Command
         $user->removeRole(ManagementRbac::SYSTEM_ADMIN_ROLE);
         $after = $user->refresh()->getRoleNames()->sort()->values()->all();
 
-        ManageActionLog::query()->create([
-            'user_id' => $user->id,
-            'action' => 'system_admin.revoke',
-            'target_type' => 'user',
-            'target_id' => $user->id,
-            'target_public_id' => $user->public_id,
-            'metadata' => [
-                'actor_type' => 'cli',
-                'command' => $this->getName(),
-                'environment' => app()->environment(),
-                'sapi' => PHP_SAPI,
+        app(ManageActionLogger::class)->forCli(
+            command: $this->getName(),
+            action: 'system_admin.revoke',
+            targetType: 'user',
+            targetId: $user->id,
+            targetPublicId: $user->public_id,
+            metadata: [
                 'before' => ['roles' => $before],
                 'after' => ['roles' => $after],
             ],
-        ]);
+        );
 
         $this->info("Removed system administrator from {$publicId}.");
 
