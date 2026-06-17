@@ -26,5 +26,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $user->forceFill(['primary_email_id' => $email->id])->save();
+
+        $this->call(ManagementRbacSeeder::class);
     }
 }
