@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Manage\AuthController as ManageAuthController;
+use App\Http\Controllers\Manage\AuditController as ManageAuditController;
 use App\Http\Controllers\Manage\DashboardController as ManageDashboardController;
 use App\Http\Controllers\Manage\RoomController as ManageRoomController;
 use App\Http\Controllers\Manage\UserController as ManageUserController;
@@ -34,7 +35,7 @@ Route::middleware('auth')->group(function (): void {
 });
 
 Route::prefix('manage')->name('manage.')->group(function (): void {
-    Route::middleware(['auth', 'manage.authenticated', 'permission:manage.access'])->group(function (): void {
+    Route::middleware(['manage.authenticated', 'permission:manage.access'])->group(function (): void {
         Route::get('/', fn () => Inertia::render('Manage/Index'))->name('index');
         Route::get('/users', fn () => Inertia::render('Manage/Users/Index'))->name('users.index');
         Route::get('/users/{user_public_id}', fn (string $userPublicId) => Inertia::render('Manage/Users/Show', [
@@ -44,12 +45,13 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
         Route::get('/rooms/{room_public_id}', fn (string $roomPublicId) => Inertia::render('Manage/Rooms/Show', [
             'roomPublicId' => $roomPublicId,
         ]))->name('rooms.show');
+        Route::get('/audit/login-failures', fn () => Inertia::render('Manage/Audit/LoginFailures'))->name('audit.login-failures');
     });
 
     Route::prefix('api')->name('api.')->group(function (): void {
         Route::post('/login', [ManageAuthController::class, 'store'])->name('login');
 
-        Route::middleware(['auth', 'manage.authenticated', 'permission:manage.access'])->group(function (): void {
+        Route::middleware(['manage.authenticated', 'permission:manage.access', 'manage.audit'])->group(function (): void {
             Route::post('/logout', [ManageAuthController::class, 'destroy'])->name('logout');
             Route::get('/me', [ManageDashboardController::class, 'me'])
                 ->middleware('permission:manage.access')
@@ -75,6 +77,10 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
             Route::get('/rooms/{room_public_id}/users', [ManageRoomController::class, 'users'])
                 ->middleware('permission:manage.rooms.detail')
                 ->name('rooms.users');
+            Route::get('/audit/login-failures', [ManageAuditController::class, 'loginFailures'])
+                ->name('audit.login-failures');
+            Route::get('/audit/actions', [ManageAuditController::class, 'actions'])
+                ->name('audit.actions');
         });
     });
 });

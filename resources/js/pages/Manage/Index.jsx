@@ -51,6 +51,7 @@ export default function ManageIndex() {
                     <div className="actions-row">
                         <Link className="button-link" href="/manage/users">使用者一覽</Link>
                         <Link className="button-link" href="/manage/rooms">房間一覽</Link>
+                        <Link className="button-link" href="/manage/audit/login-failures">登入失敗紀錄</Link>
                         <button type="button" className="button-ghost" onClick={logout} disabled={processing}>登出管理後台</button>
                     </div>
                 </section>
@@ -83,6 +84,12 @@ export default function ManageIndex() {
                                         <div>
                                             <strong>房間一覽</strong>
                                             <span>查看服務內所有房間與房間成員</span>
+                                        </div>
+                                    </Link>
+                                    <Link className="list-item manage-link-item" href="/manage/audit/login-failures">
+                                        <div>
+                                            <strong>登入失敗紀錄</strong>
+                                            <span>查看管理後台登入失敗與鎖定紀錄</span>
                                         </div>
                                     </Link>
                                 </div>

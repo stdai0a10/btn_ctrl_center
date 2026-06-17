@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Manage;
 
 use App\Http\Controllers\ApiController;
 use App\Models\Auth\UserEmail;
+use App\Models\ManageLoginLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -24,8 +25,8 @@ class AuthController extends ApiController
         $accountKey = "manage-login:account:{$email}";
         $ipKey = "manage-login:ip:{$ip}";
 
-        $this->ensureLoginIsNotLocked($accountKey);
-        $this->ensureLoginIsNotLocked($ipKey);
+        $this->ensureLoginIsNotLocked($request, $accountKey, $email);
+        $this->ensureLoginIsNotLocked($request, $ipKey, $email);
 
         $userEmail = UserEmail::query()
             ->with('user')
@@ -45,6 +46,7 @@ class AuthController extends ApiController
         ) {
             RateLimiter::hit($accountKey, 900);
             RateLimiter::hit($ipKey, 900);
+            $this->logLogin($request, $email, $user?->id, false, 'invalid_credentials_or_permission');
 
             throw ValidationException::withMessages([
                 'email' => '管理後台登入資料不正確。',
@@ -53,6 +55,7 @@ class AuthController extends ApiController
 
         RateLimiter::clear($accountKey);
         RateLimiter::clear($ipKey);
+        $this->logLogin($request, $email, $user->id, true);
 
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
@@ -76,12 +79,34 @@ class AuthController extends ApiController
         ], '已登出管理後台。');
     }
 
-    private function ensureLoginIsNotLocked(string $key): void
+    private function ensureLoginIsNotLocked(Request $request, string $key, string $email): void
     {
         if (RateLimiter::tooManyAttempts($key, 5)) {
+            $lockedUntil = now()->addSeconds(RateLimiter::availableIn($key));
+            $this->logLogin($request, $email, null, false, 'rate_limited', $lockedUntil);
+
             throw ValidationException::withMessages([
                 'email' => '管理後台登入資料不正確，請稍後再試。',
             ]);
         }
+    }
+
+    private function logLogin(
+        Request $request,
+        string $email,
+        ?int $userId,
+        bool $success,
+        ?string $failureReason = null,
+        $lockedUntil = null,
+    ): void {
+        ManageLoginLog::query()->create([
+            'user_id' => $userId,
+            'email' => $email,
+            'ip_address' => $request->ip(),
+            'user_agent' => substr((string) $request->userAgent(), 0, 2000),
+            'success' => $success,
+            'failure_reason' => $failureReason,
+            'locked_until' => $lockedUntil,
+        ]);
     }
 }
