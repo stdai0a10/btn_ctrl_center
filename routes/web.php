@@ -4,6 +4,7 @@ use App\Http\Controllers\Manage\AuditController as ManageAuditController;
 use App\Http\Controllers\Manage\AuthController as ManageAuthController;
 use App\Http\Controllers\Manage\DashboardController as ManageDashboardController;
 use App\Http\Controllers\Manage\RoomController as ManageRoomController;
+use App\Http\Controllers\Manage\ServiceManagerController as ManageServiceManagerController;
 use App\Http\Controllers\Manage\UserController as ManageUserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -77,6 +78,24 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
             Route::get('/rooms/{room_public_id}/users', [ManageRoomController::class, 'users'])
                 ->middleware('permission:manage.rooms.detail')
                 ->name('rooms.users');
+            Route::get('/service-managers', [ManageServiceManagerController::class, 'index'])
+                ->middleware('permission:manage.service_managers.view')
+                ->name('service-managers.index');
+            Route::post('/service-managers/grant-many', [ManageServiceManagerController::class, 'grantMany'])
+                ->middleware('permission:manage.service_managers.grant')
+                ->name('service-managers.grant-many');
+            Route::post('/service-managers/revoke-many', [ManageServiceManagerController::class, 'revokeMany'])
+                ->middleware('permission:manage.service_managers.revoke')
+                ->name('service-managers.revoke-many');
+            Route::get('/service-managers/{user_public_id}', [ManageServiceManagerController::class, 'show'])
+                ->middleware('permission:manage.service_managers.detail')
+                ->name('service-managers.show');
+            Route::post('/service-managers/{user_public_id}/grant', [ManageServiceManagerController::class, 'grant'])
+                ->middleware('permission:manage.service_managers.grant')
+                ->name('service-managers.grant');
+            Route::post('/service-managers/{user_public_id}/revoke', [ManageServiceManagerController::class, 'revoke'])
+                ->middleware('permission:manage.service_managers.revoke')
+                ->name('service-managers.revoke');
             Route::get('/audit/login-failures', [ManageAuditController::class, 'loginFailures'])
                 ->name('audit.login-failures');
             Route::get('/audit/manage-actions', [ManageAuditController::class, 'actions'])
