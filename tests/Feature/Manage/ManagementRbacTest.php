@@ -61,7 +61,7 @@ class ManagementRbacTest extends TestCase
                 'manage_authenticated_at' => now()->toISOString(),
                 'manage_authenticated_user_id' => $user->id,
             ])
-            ->get('/manage');
+            ->getJson('/manage/api/me');
 
         $response->assertOk();
     }
