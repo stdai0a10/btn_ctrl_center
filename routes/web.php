@@ -105,8 +105,10 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
                 ->middleware('permission:manage.service_managers.revoke')
                 ->name('service-managers.revoke');
             Route::get('/audit/login-failures', [ManageAuditController::class, 'loginFailures'])
+                ->middleware(['permission:audit.access', 'permission:audit.login_failures.view'])
                 ->name('audit.login-failures');
             Route::get('/audit/manage-actions', [ManageAuditController::class, 'actions'])
+                ->middleware(['permission:audit.access', 'permission:audit.manage_actions.view'])
                 ->name('audit.manage-actions');
         });
     });
