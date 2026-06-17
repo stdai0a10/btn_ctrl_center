@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Permission\Permission;
 use App\Models\Permission\Role;
+use App\Support\ManagementRbac;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -16,28 +17,27 @@ class ManagementRbacSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $permissions = collect([
-            'manage.access',
-            'manage.dashboard.view',
-            'manage.users.view',
-            'manage.users.detail',
-            'manage.rooms.view',
-            'manage.rooms.detail',
-        ])->mapWithKeys(fn (string $name): array => [
-            $name => Permission::query()->firstOrCreate([
-                'name' => $name,
-                'guard_name' => 'web',
-            ]),
-        ]);
-
-        foreach (['service_manager', 'system_admin'] as $roleName) {
-            $role = Role::query()->firstOrCreate([
-                'name' => $roleName,
-                'guard_name' => 'web',
+        $permissions = collect(ManagementRbac::SYSTEM_ADMIN_PERMISSIONS)
+            ->mapWithKeys(fn (string $name): array => [
+                $name => Permission::query()->firstOrCreate([
+                    'name' => $name,
+                    'guard_name' => 'web',
+                ]),
             ]);
 
-            $role->syncPermissions($permissions->values());
-        }
+        $serviceManager = Role::query()->firstOrCreate([
+            'name' => ManagementRbac::SERVICE_MANAGER_ROLE,
+            'guard_name' => 'web',
+        ]);
+        $serviceManager->syncPermissions(
+            $permissions->only(ManagementRbac::SERVICE_MANAGER_PERMISSIONS)->values()
+        );
+
+        $systemAdmin = Role::query()->firstOrCreate([
+            'name' => ManagementRbac::SYSTEM_ADMIN_ROLE,
+            'guard_name' => 'web',
+        ]);
+        $systemAdmin->syncPermissions($permissions->values());
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
