@@ -543,6 +543,64 @@ button:disabled {
     font-weight: 800;
 }
 
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    width: min(100%, 76rem);
+    margin: 0 auto 1rem;
+}
+
+.stat-card {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.stat-card span {
+    color: var(--muted);
+    font-size: 0.86rem;
+    font-weight: 800;
+}
+
+.stat-card strong {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.manage-link-item {
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.detail-list {
+    display: grid;
+    gap: 0.75rem;
+    margin: 1rem 0;
+}
+
+.detail-list div {
+    display: grid;
+    grid-template-columns: 8rem minmax(0, 1fr);
+    gap: 1rem;
+}
+
+.detail-list dt {
+    color: var(--muted);
+    font-weight: 800;
+}
+
+.detail-list dd {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.permission-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
 .check-row {
     display: flex;
     grid-template-columns: unset;
@@ -560,7 +618,8 @@ button:disabled {
     }
 
     .split-layout,
-    .grid-2 {
+    .grid-2,
+    .stat-grid {
         grid-template-columns: 1fr;
     }
 
@@ -601,6 +660,11 @@ button:disabled {
 
     .account-row {
         grid-template-columns: 1fr;
+    }
+
+    .detail-list div {
+        grid-template-columns: 1fr;
+        gap: 0.2rem;
     }
 
     .account-label {

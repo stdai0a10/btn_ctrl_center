@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Manage\AuthController as ManageAuthController;
+use App\Http\Controllers\Manage\DashboardController as ManageDashboardController;
 
 Route::get('/', function () {
     return Inertia::render('Home', [
@@ -31,11 +32,21 @@ Route::middleware('auth')->group(function (): void {
 });
 
 Route::prefix('manage')->name('manage.')->group(function (): void {
+    Route::middleware(['auth', 'manage.authenticated', 'permission:manage.access'])->group(function (): void {
+        Route::get('/', fn () => Inertia::render('Manage/Index'))->name('index');
+    });
+
     Route::prefix('api')->name('api.')->group(function (): void {
         Route::post('/login', [ManageAuthController::class, 'store'])->name('login');
 
         Route::middleware(['auth', 'manage.authenticated', 'permission:manage.access'])->group(function (): void {
             Route::post('/logout', [ManageAuthController::class, 'destroy'])->name('logout');
+            Route::get('/me', [ManageDashboardController::class, 'me'])
+                ->middleware('permission:manage.access')
+                ->name('me');
+            Route::get('/dashboard', [ManageDashboardController::class, 'dashboard'])
+                ->middleware('permission:manage.dashboard.view')
+                ->name('dashboard');
         });
     });
 });
