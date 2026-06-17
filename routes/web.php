@@ -36,16 +36,26 @@ Route::middleware('auth')->group(function (): void {
 });
 
 Route::prefix('manage')->name('manage.')->group(function (): void {
-    Route::middleware(['manage.authenticated', 'permission:manage.access'])->group(function (): void {
-        Route::get('/', fn () => Inertia::render('Manage/Index'))->name('index');
-        Route::get('/users', fn () => Inertia::render('Manage/Users/Index'))->name('users.index');
+    Route::middleware(['auth', 'manage.authenticated', 'permission:manage.access'])->group(function (): void {
+        Route::get('/', fn () => Inertia::render('Manage/Index'))
+            ->middleware('permission:manage.dashboard.view')
+            ->name('index');
+        Route::get('/users', fn () => Inertia::render('Manage/Users/Index'))
+            ->middleware('permission:manage.users.view')
+            ->name('users.index');
         Route::get('/users/{user_public_id}', fn (string $userPublicId) => Inertia::render('Manage/Users/Show', [
             'userPublicId' => $userPublicId,
-        ]))->name('users.show');
-        Route::get('/rooms', fn () => Inertia::render('Manage/Rooms/Index'))->name('rooms.index');
+        ]))
+            ->middleware('permission:manage.users.detail')
+            ->name('users.show');
+        Route::get('/rooms', fn () => Inertia::render('Manage/Rooms/Index'))
+            ->middleware('permission:manage.rooms.view')
+            ->name('rooms.index');
         Route::get('/rooms/{room_public_id}', fn (string $roomPublicId) => Inertia::render('Manage/Rooms/Show', [
             'roomPublicId' => $roomPublicId,
-        ]))->name('rooms.show');
+        ]))
+            ->middleware('permission:manage.rooms.detail')
+            ->name('rooms.show');
         Route::get('/service-managers', fn () => Inertia::render('Manage/ServiceManagers/Index'))
             ->middleware('permission:manage.service_managers.view')
             ->name('service-managers.index');
@@ -68,7 +78,7 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
     Route::prefix('api')->name('api.')->group(function (): void {
         Route::post('/login', [ManageAuthController::class, 'store'])->name('login');
 
-        Route::middleware(['manage.authenticated', 'permission:manage.access', 'manage.audit'])->group(function (): void {
+        Route::middleware(['auth', 'manage.authenticated', 'permission:manage.access', 'manage.audit'])->group(function (): void {
             Route::post('/logout', [ManageAuthController::class, 'destroy'])->name('logout');
             Route::get('/me', [ManageDashboardController::class, 'me'])
                 ->middleware('permission:manage.access')
