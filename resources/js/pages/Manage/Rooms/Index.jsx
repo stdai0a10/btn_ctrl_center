@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import AppLayout from '../../../layouts/AppLayout';
+import ManageLayout from '../../../layouts/ManageLayout';
 import { errorMessage } from '../../../lib/http';
 
 const statusOptions = [
@@ -46,7 +46,7 @@ export default function ManageRoomsIndex() {
     return (
         <>
             <Head title="房間一覽" />
-            <AppLayout>
+            <ManageLayout>
                 <section className="page-header">
                     <p className="eyebrow">Management Rooms</p>
                     <h1>房間一覽</h1>
@@ -124,7 +124,7 @@ export default function ManageRoomsIndex() {
                         </div>
                     )}
                 </section>
-            </AppLayout>
+            </ManageLayout>
         </>
     );
 }

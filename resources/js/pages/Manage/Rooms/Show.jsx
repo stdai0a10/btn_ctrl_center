@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import AppLayout from '../../../layouts/AppLayout';
+import ManageLayout from '../../../layouts/ManageLayout';
 import { errorMessage } from '../../../lib/http';
 
 export default function ManageRoomShow({ roomPublicId }) {
@@ -29,7 +29,7 @@ export default function ManageRoomShow({ roomPublicId }) {
     return (
         <>
             <Head title={room ? room.name : '房間詳細'} />
-            <AppLayout>
+            <ManageLayout>
                 <section className="page-header">
                     <p className="eyebrow">Management Room</p>
                     <h1>{room ? room.name : '房間詳細'}</h1>
@@ -104,7 +104,7 @@ export default function ManageRoomShow({ roomPublicId }) {
                         </section>
                     </section>
                 )}
-            </AppLayout>
+            </ManageLayout>
         </>
     );
 }

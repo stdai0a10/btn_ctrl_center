@@ -1,13 +1,12 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import AppLayout from '../../layouts/AppLayout';
+import ManageLayout from '../../layouts/ManageLayout';
 import { errorMessage } from '../../lib/http';
 
 export default function ManageIndex() {
     const [dashboard, setDashboard] = useState(null);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
-    const [processing, setProcessing] = useState(false);
 
     useEffect(() => {
         loadDashboard();
@@ -27,33 +26,16 @@ export default function ManageIndex() {
         }
     }
 
-    async function logout() {
-        setProcessing(true);
-
-        try {
-            const response = await window.axios.post('/manage/api/logout');
-            router.visit(response.data.data.redirect_to ?? '/manage/login');
-        } finally {
-            setProcessing(false);
-        }
-    }
-
     const stats = dashboard?.stats ?? {};
     const admin = dashboard?.admin;
 
     return (
         <>
             <Head title="管理後台" />
-            <AppLayout>
+            <ManageLayout>
                 <section className="page-header">
                     <p className="eyebrow">Management</p>
                     <h1>管理後台</h1>
-                    <div className="actions-row">
-                        <Link className="button-link" href="/manage/users">使用者一覽</Link>
-                        <Link className="button-link" href="/manage/rooms">房間一覽</Link>
-                        <Link className="button-link" href="/manage/audit/login-failures">登入失敗紀錄</Link>
-                        <button type="button" className="button-ghost" onClick={logout} disabled={processing}>登出管理後台</button>
-                    </div>
                 </section>
 
                 {loading && <p className="muted">載入中...</p>}
@@ -127,7 +109,7 @@ export default function ManageIndex() {
                         </section>
                     </>
                 )}
-            </AppLayout>
+            </ManageLayout>
         </>
     );
 }

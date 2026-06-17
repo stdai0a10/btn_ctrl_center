@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import AppLayout from '../../layouts/AppLayout';
+import ManageLoginLayout from '../../layouts/ManageLoginLayout';
 import { formErrors } from '../../lib/http';
 
 export default function ManageLogin() {
@@ -26,8 +26,8 @@ export default function ManageLogin() {
     return (
         <>
             <Head title="管理後台登入" />
-            <AppLayout contentClassName="auth-layout-main">
-                <section className="auth-card">
+            <ManageLoginLayout>
+                <section className="auth-card manage-login-card">
                     <p className="eyebrow">Management</p>
                     <h1>管理後台登入</h1>
                     <p className="lede">請使用具管理權限的帳號與密碼登入。</p>
@@ -64,7 +64,7 @@ export default function ManageLogin() {
                         </button>
                     </form>
                 </section>
-            </AppLayout>
+            </ManageLoginLayout>
         </>
     );
 }

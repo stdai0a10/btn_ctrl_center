@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import AppLayout from '../../../layouts/AppLayout';
+import ManageLayout from '../../../layouts/ManageLayout';
 import { errorMessage } from '../../../lib/http';
 
 export default function ManageLoginFailures() {
@@ -34,7 +34,7 @@ export default function ManageLoginFailures() {
     return (
         <>
             <Head title="登入失敗紀錄" />
-            <AppLayout>
+            <ManageLayout>
                 <section className="page-header">
                     <p className="eyebrow">Management Audit</p>
                     <h1>登入失敗紀錄</h1>
@@ -89,7 +89,7 @@ export default function ManageLoginFailures() {
                         </div>
                     )}
                 </section>
-            </AppLayout>
+            </ManageLayout>
         </>
     );
 }

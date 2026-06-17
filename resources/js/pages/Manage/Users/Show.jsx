@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import AppLayout from '../../../layouts/AppLayout';
+import ManageLayout from '../../../layouts/ManageLayout';
 import { errorMessage } from '../../../lib/http';
 
 export default function ManageUserShow({ userPublicId }) {
@@ -29,7 +29,7 @@ export default function ManageUserShow({ userPublicId }) {
     return (
         <>
             <Head title={user ? user.display_name : '使用者詳細'} />
-            <AppLayout>
+            <ManageLayout>
                 <section className="page-header">
                     <p className="eyebrow">Management User</p>
                     <h1>{user ? user.display_name : '使用者詳細'}</h1>
@@ -101,7 +101,7 @@ export default function ManageUserShow({ userPublicId }) {
                         </section>
                     </section>
                 )}
-            </AppLayout>
+            </ManageLayout>
         </>
     );
 }

@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import AppLayout from '../../../layouts/AppLayout';
+import ManageLayout from '../../../layouts/ManageLayout';
 import { errorMessage } from '../../../lib/http';
 
 const statusOptions = [
@@ -47,7 +47,7 @@ export default function ManageUsersIndex() {
     return (
         <>
             <Head title="使用者一覽" />
-            <AppLayout>
+            <ManageLayout>
                 <section className="page-header">
                     <p className="eyebrow">Management Users</p>
                     <h1>使用者一覽</h1>
@@ -125,7 +125,7 @@ export default function ManageUsersIndex() {
                         </div>
                     )}
                 </section>
-            </AppLayout>
+            </ManageLayout>
         </>
     );
 }
