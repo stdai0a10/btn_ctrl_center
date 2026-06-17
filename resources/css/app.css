@@ -662,6 +662,38 @@ button:disabled {
     min-width: 12rem;
 }
 
+.manage-audit-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    align-items: end;
+    gap: 0.75rem;
+}
+
+.manage-audit-filters .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+}
+
+.manage-audit-filters .checkbox-label input {
+    width: auto;
+}
+
+.audit-detail-row,
+.audit-detail-row:hover {
+    background: #f6f8f7 !important;
+    cursor: default !important;
+}
+
+.audit-json {
+    max-width: 100%;
+    margin: 0;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .manage-wide-panel {
     grid-column: 1 / -1;
 }

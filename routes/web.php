@@ -54,7 +54,15 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
         ]))
             ->middleware('permission:manage.service_managers.detail')
             ->name('service-managers.show');
-        Route::get('/audit/login-failures', fn () => Inertia::render('Manage/Audit/LoginFailures'))->name('audit.login-failures');
+        Route::middleware('permission:audit.access')->prefix('audit')->name('audit.')->group(function (): void {
+            Route::get('/', fn () => Inertia::render('Manage/Audit/Index'))->name('index');
+            Route::get('/login-failures', fn () => Inertia::render('Manage/Audit/LoginFailures'))
+                ->middleware('permission:audit.login_failures.view')
+                ->name('login-failures');
+            Route::get('/manage-actions', fn () => Inertia::render('Manage/Audit/ManageActions'))
+                ->middleware('permission:audit.manage_actions.view')
+                ->name('manage-actions');
+        });
     });
 
     Route::prefix('api')->name('api.')->group(function (): void {

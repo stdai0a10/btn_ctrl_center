@@ -76,12 +76,14 @@ export default function ManageIndex() {
                                             </div>
                                         </Link>
                                     )}
-                                    <Link className="list-item manage-link-item" href="/manage/audit/login-failures">
-                                        <div>
-                                            <strong>登入失敗紀錄</strong>
-                                            <span>查看管理後台登入失敗與鎖定紀錄</span>
-                                        </div>
-                                    </Link>
+                                    {admin.permissions.includes('audit.access') && (
+                                        <Link className="list-item manage-link-item" href="/manage/audit">
+                                            <div>
+                                                <strong>審計資料</strong>
+                                                <span>查看管理後台登入失敗與操作紀錄</span>
+                                            </div>
+                                        </Link>
+                                    )}
                                 </div>
                             </section>
 

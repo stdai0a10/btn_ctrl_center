@@ -7,7 +7,7 @@ const navItems = [
     { label: '使用者一覽', href: '/manage/users', icon: Users, permission: 'manage.users.view' },
     { label: '房間一覽', href: '/manage/rooms', icon: DoorOpen, permission: 'manage.rooms.view' },
     { label: '服務管理員', href: '/manage/service-managers', icon: ShieldCheck, permission: 'manage.service_managers.view' },
-    { label: '登入失敗紀錄', href: '/manage/audit/login-failures', icon: ShieldAlert, permission: 'audit.login_failures.view' },
+    { label: '審計資料', href: '/manage/audit', icon: ShieldAlert, permission: 'audit.access' },
 ];
 
 export default function ManageLayout({ children }) {
