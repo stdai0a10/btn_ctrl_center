@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Manage\AuthController as ManageAuthController;
 use App\Http\Controllers\Manage\DashboardController as ManageDashboardController;
+use App\Http\Controllers\Manage\UserController as ManageUserController;
 
 Route::get('/', function () {
     return Inertia::render('Home', [
@@ -34,6 +35,10 @@ Route::middleware('auth')->group(function (): void {
 Route::prefix('manage')->name('manage.')->group(function (): void {
     Route::middleware(['auth', 'manage.authenticated', 'permission:manage.access'])->group(function (): void {
         Route::get('/', fn () => Inertia::render('Manage/Index'))->name('index');
+        Route::get('/users', fn () => Inertia::render('Manage/Users/Index'))->name('users.index');
+        Route::get('/users/{user_public_id}', fn (string $userPublicId) => Inertia::render('Manage/Users/Show', [
+            'userPublicId' => $userPublicId,
+        ]))->name('users.show');
     });
 
     Route::prefix('api')->name('api.')->group(function (): void {
@@ -47,6 +52,15 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
             Route::get('/dashboard', [ManageDashboardController::class, 'dashboard'])
                 ->middleware('permission:manage.dashboard.view')
                 ->name('dashboard');
+            Route::get('/users', [ManageUserController::class, 'index'])
+                ->middleware('permission:manage.users.view')
+                ->name('users.index');
+            Route::get('/users/{user_public_id}', [ManageUserController::class, 'show'])
+                ->middleware('permission:manage.users.detail')
+                ->name('users.show');
+            Route::get('/users/{user_public_id}/rooms', [ManageUserController::class, 'rooms'])
+                ->middleware('permission:manage.users.detail')
+                ->name('users.rooms');
         });
     });
 });

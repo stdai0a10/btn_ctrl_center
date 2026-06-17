@@ -220,6 +220,17 @@ input {
     font: inherit;
 }
 
+select {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--soft-line);
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    background: #fffdf7;
+    color: var(--ink);
+    font: inherit;
+}
+
 small {
     color: var(--muted);
     font-weight: 500;
@@ -599,6 +610,60 @@ button:disabled {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+}
+
+.table-wrap {
+    overflow-x: auto;
+    margin-top: 1rem;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+
+.data-table th,
+.data-table td {
+    border-bottom: 1px solid var(--soft-line);
+    padding: 0.85rem;
+    text-align: left;
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+.data-table th {
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.data-table tbody tr {
+    cursor: pointer;
+}
+
+.data-table tbody tr:hover {
+    background: #f6f8f7;
+}
+
+.pagination-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.manage-filter-form {
+    align-items: end;
+}
+
+.manage-filter-form label {
+    min-width: 12rem;
+}
+
+.manage-wide-panel {
+    grid-column: 1 / -1;
 }
 
 .check-row {
