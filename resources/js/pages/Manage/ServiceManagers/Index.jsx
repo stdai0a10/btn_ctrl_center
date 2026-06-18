@@ -1,5 +1,7 @@
 import { Head, router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { EllipsisVertical, Eye, ShieldMinus, ShieldPlus } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { useEffect, useRef, useState } from 'react';
 import ManageLayout from '../../../layouts/ManageLayout';
 import { errorMessage } from '../../../lib/http';
 
@@ -24,10 +26,42 @@ export default function ServiceManagersIndex() {
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
+    const [openMenu, setOpenMenu] = useState(null);
+    const menuRef = useRef(null);
 
     useEffect(() => {
         loadUsers(1);
     }, []);
+
+    useEffect(() => {
+        if (openMenu === null) return undefined;
+
+        function closeMenu(event) {
+            if (menuRef.current?.contains(event.target)) return;
+            if (event.target.closest?.(`[data-action-trigger="${openMenu.user.public_id}"]`)) return;
+            setOpenMenu(null);
+        }
+
+        function closeOnViewportChange() {
+            setOpenMenu(null);
+        }
+
+        function closeOnEscape(event) {
+            if (event.key === 'Escape') setOpenMenu(null);
+        }
+
+        document.addEventListener('pointerdown', closeMenu);
+        document.addEventListener('keydown', closeOnEscape);
+        window.addEventListener('resize', closeOnViewportChange);
+        window.addEventListener('scroll', closeOnViewportChange, true);
+
+        return () => {
+            document.removeEventListener('pointerdown', closeMenu);
+            document.removeEventListener('keydown', closeOnEscape);
+            window.removeEventListener('resize', closeOnViewportChange);
+            window.removeEventListener('scroll', closeOnViewportChange, true);
+        };
+    }, [openMenu]);
 
     async function loadUsers(page = 1, nextFilters = filters) {
         setLoading(true);
@@ -88,6 +122,43 @@ export default function ServiceManagersIndex() {
             : [...current, publicId]);
     }
 
+    function runRowAction(user, operation) {
+        if (operation === 'detail') {
+            router.visit(`/manage/service-managers/${user.public_id}`);
+            return;
+        }
+
+        changeRole(user, operation);
+    }
+
+    function selectRowAction(event, user, operation) {
+        setOpenMenu(null);
+        runRowAction(user, operation);
+    }
+
+    function toggleRowMenu(event, user) {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const menuWidth = 184;
+        const estimatedHeight = 104;
+        const gap = 6;
+        const left = Math.min(
+            window.innerWidth - menuWidth - 12,
+            Math.max(12, rect.right - menuWidth),
+        );
+        const openAbove = rect.bottom + gap + estimatedHeight > window.innerHeight;
+
+        setOpenMenu((current) => current?.user.public_id === user.public_id
+            ? null
+            : {
+                user,
+                position: {
+                    left,
+                    top: openAbove ? rect.top - gap : rect.bottom + gap,
+                    placement: openAbove ? 'top' : 'bottom',
+                },
+            });
+    }
+
     const users = payload?.items ?? [];
     const pagination = payload?.pagination;
 
@@ -134,8 +205,8 @@ export default function ServiceManagersIndex() {
                         <h2>使用者</h2>
                         <div className="compact-actions">
                             {pagination && <span className="status-pill">{pagination.total} 筆</span>}
-                            <button type="button" disabled={processing || selected.length === 0} onClick={() => changeMany('grant')}>批次授權</button>
-                            <button type="button" className="button-danger" disabled={processing || selected.length === 0} onClick={() => changeMany('revoke')}>批次撤銷</button>
+                            <button type="button" className="status-action-button" disabled={processing || selected.length === 0} onClick={() => changeMany('grant')}>批次授權</button>
+                            <button type="button" className="button-danger status-action-button" disabled={processing || selected.length === 0} onClick={() => changeMany('revoke')}>批次撤銷</button>
                         </div>
                     </div>
 
@@ -172,18 +243,53 @@ export default function ServiceManagersIndex() {
                                             <td>{formatDate(user.created_at)}</td>
                                             <td>{formatDate(user.last_login_at)}</td>
                                             <td onClick={(event) => event.stopPropagation()}>
-                                                <div className="compact-actions">
-                                                    <button type="button" className="button-ghost" onClick={() => router.visit(`/manage/service-managers/${user.public_id}`)}>詳細</button>
-                                                    {user.has_service_manager
-                                                        ? <button type="button" className="button-danger" disabled={processing} onClick={() => changeRole(user, 'revoke')}>撤銷</button>
-                                                        : <button type="button" disabled={processing || user.status !== 'active'} onClick={() => changeRole(user, 'grant')}>授權</button>}
-                                                </div>
+                                                <button
+                                                    type="button"
+                                                    className="table-action-trigger"
+                                                    data-action-trigger={user.public_id}
+                                                    aria-label={`${user.display_name} 操作`}
+                                                    aria-expanded={openMenu?.user.public_id === user.public_id}
+                                                    aria-haspopup="menu"
+                                                    title="操作"
+                                                    onClick={(event) => toggleRowMenu(event, user)}
+                                                >
+                                                    <EllipsisVertical size={19} strokeWidth={2.4} />
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
+                    )}
+
+                    {openMenu && createPortal(
+                        <div
+                            ref={menuRef}
+                            className={`table-action-menu-list is-${openMenu.position.placement}`}
+                            role="menu"
+                            style={{
+                                left: openMenu.position.left,
+                                top: openMenu.position.top,
+                            }}
+                        >
+                            <button type="button" role="menuitem" onClick={(event) => selectRowAction(event, openMenu.user, 'detail')}>
+                                <Eye size={17} />
+                                查看詳細
+                            </button>
+                            {openMenu.user.has_service_manager ? (
+                                <button type="button" role="menuitem" className="is-danger" disabled={processing} onClick={(event) => selectRowAction(event, openMenu.user, 'revoke')}>
+                                    <ShieldMinus size={17} />
+                                    撤銷服務管理員
+                                </button>
+                            ) : (
+                                <button type="button" role="menuitem" disabled={processing || openMenu.user.status !== 'active'} onClick={(event) => selectRowAction(event, openMenu.user, 'grant')}>
+                                    <ShieldPlus size={17} />
+                                    授予服務管理員
+                                </button>
+                            )}
+                        </div>,
+                        document.body,
                     )}
 
                     {pagination && pagination.last_page > 1 && (

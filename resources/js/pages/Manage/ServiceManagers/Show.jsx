@@ -64,8 +64,8 @@ export default function ServiceManagerShow({ userPublicId }) {
                                 <div className="compact-actions">
                                     <span className="status-pill">{user.has_service_manager ? '服務管理員' : '一般使用者'}</span>
                                     {user.has_service_manager
-                                        ? <button type="button" className="button-danger" disabled={processing} onClick={() => changeRole('revoke')}>撤銷服務管理員</button>
-                                        : <button type="button" disabled={processing || user.status !== 'active'} onClick={() => changeRole('grant')}>授予服務管理員</button>}
+                                        ? <button type="button" className="button-danger status-action-button" disabled={processing} onClick={() => changeRole('revoke')}>撤銷服務管理員</button>
+                                        : <button type="button" className="status-action-button" disabled={processing || user.status !== 'active'} onClick={() => changeRole('grant')}>授予服務管理員</button>}
                                 </div>
                             </div>
                             <dl className="detail-list">
