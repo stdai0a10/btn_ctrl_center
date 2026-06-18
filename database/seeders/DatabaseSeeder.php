@@ -16,17 +16,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $user = User::factory()->create([
-            'name' => 'Test User',
-        ]);
-
-        $email = UserEmail::factory()->create([
-            'user_id' => $user->id,
-            'email' => 'test@example.com',
-        ]);
-
-        $user->forceFill(['primary_email_id' => $email->id])->save();
-
         $this->call(ManagementRbacSeeder::class);
     }
 }
