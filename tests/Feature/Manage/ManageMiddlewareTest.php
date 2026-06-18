@@ -21,7 +21,9 @@ class ManageMiddlewareTest extends TestCase
 
     public function test_guests_and_users_without_manage_verification_cannot_access_management_routes(): void
     {
-        $this->get('/manage/service-managers')->assertRedirect('/login');
+        $this->get('/manage')->assertRedirect('/manage/login');
+        $this->get('/manage/service-managers')->assertRedirect('/manage/login');
+        $this->get('/manage/audit')->assertRedirect('/manage/login');
         $this->getJson('/manage/api/service-managers')->assertUnauthorized();
 
         $admin = User::factory()->create();

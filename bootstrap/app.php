@@ -10,6 +10,7 @@ use App\Http\Middleware\LogManageAction;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -28,6 +29,12 @@ return Application::configure(basePath: dirname(__DIR__))
         RemoveSystemAdmin::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->redirectGuestsTo(
+            fn (Request $request): string => $request->is('manage', 'manage/*')
+                ? route('manage.login')
+                : route('login')
+        );
+
         $middleware->web(append: [
             HandleInertiaRequests::class,
         ]);
