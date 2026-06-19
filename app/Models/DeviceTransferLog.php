@@ -14,6 +14,9 @@ class DeviceTransferLog extends Model
         'from_room_id',
         'to_room_id',
         'transferred_by_user_id',
+        'from_room_public_id_snapshot',
+        'to_room_public_id_snapshot',
+        'transferred_by_user_public_id_snapshot',
         'created_at',
     ];
 
@@ -31,12 +34,12 @@ class DeviceTransferLog extends Model
 
     public function fromRoom(): BelongsTo
     {
-        return $this->belongsTo(Room::class, 'from_room_id');
+        return $this->belongsTo(Room::class, 'from_room_id')->withTrashed();
     }
 
     public function toRoom(): BelongsTo
     {
-        return $this->belongsTo(Room::class, 'to_room_id');
+        return $this->belongsTo(Room::class, 'to_room_id')->withTrashed();
     }
 
     public function transferredBy(): BelongsTo

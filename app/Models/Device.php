@@ -19,6 +19,7 @@ class Device extends Model
         'current_room_id',
         'name',
         'is_locked',
+        'is_enabled',
     ];
 
     protected $hidden = [
@@ -29,12 +30,13 @@ class Device extends Model
     {
         return [
             'is_locked' => 'boolean',
+            'is_enabled' => 'boolean',
         ];
     }
 
     public function currentRoom(): BelongsTo
     {
-        return $this->belongsTo(Room::class, 'current_room_id');
+        return $this->belongsTo(Room::class, 'current_room_id')->withTrashed();
     }
 
     public function transferLogs(): HasMany
