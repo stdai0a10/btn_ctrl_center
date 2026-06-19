@@ -36,6 +36,8 @@ class SystemAdminIntegrationTest extends TestCase
             '/manage',
             '/manage/users',
             '/manage/rooms',
+            '/manage/devices',
+            '/manage/devices/create',
             '/manage/service-managers',
             '/manage/audit',
             '/manage/audit/login-failures',

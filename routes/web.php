@@ -57,6 +57,17 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
         ]))
             ->middleware('permission:manage.rooms.detail')
             ->name('rooms.show');
+        Route::get('/devices', fn () => Inertia::render('Manage/Devices/Index'))
+            ->middleware('permission:manage.devices.view')
+            ->name('devices.index');
+        Route::get('/devices/create', fn () => Inertia::render('Manage/Devices/Create'))
+            ->middleware('permission:manage.devices.create')
+            ->name('devices.create');
+        Route::get('/devices/{serial_number}', fn (string $serialNumber) => Inertia::render('Manage/Devices/Show', [
+            'serialNumber' => $serialNumber,
+        ]))
+            ->middleware('permission:manage.devices.detail')
+            ->name('devices.show');
         Route::get('/service-managers', fn () => Inertia::render('Manage/ServiceManagers/Index'))
             ->middleware('permission:manage.service_managers.view')
             ->name('service-managers.index');

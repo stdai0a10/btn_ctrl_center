@@ -1,12 +1,15 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import ManageLayout from '../../../layouts/ManageLayout';
 import { errorMessage } from '../../../lib/http';
 
 export default function ManageRoomShow({ roomPublicId }) {
     const [room, setRoom] = useState(null);
+    const [devices, setDevices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const permissions = usePage().props.auth?.manage_permissions ?? [];
+    const canViewDevices = permissions.includes('manage.devices.view');
 
     useEffect(() => {
         loadRoom();
@@ -17,8 +20,12 @@ export default function ManageRoomShow({ roomPublicId }) {
         setError('');
 
         try {
-            const response = await window.axios.get(`/manage/api/rooms/${roomPublicId}`);
-            setRoom(response.data.data);
+            const [roomResponse, deviceResponse] = await Promise.all([
+                window.axios.get(`/manage/api/rooms/${roomPublicId}`),
+                canViewDevices ? window.axios.get(`/manage/api/rooms/${roomPublicId}/devices`) : Promise.resolve(null),
+            ]);
+            setRoom(roomResponse.data.data);
+            setDevices(deviceResponse?.data?.data?.items ?? []);
         } catch (caught) {
             setError(errorMessage(caught, '房間資料載入失敗。'));
         } finally {
@@ -102,6 +109,31 @@ export default function ManageRoomShow({ roomPublicId }) {
                                 </div>
                             )}
                         </section>
+                        {canViewDevices && (
+                            <section className="panel manage-wide-panel">
+                                <div className="panel-heading">
+                                    <h2>房間內的設備</h2>
+                                    <span className="status-pill">{devices.length} 部</span>
+                                </div>
+                                {devices.length === 0 && <p className="muted">房間內沒有設備</p>}
+                                {devices.length > 0 && (
+                                    <div className="table-wrap">
+                                        <table className="data-table">
+                                            <thead><tr><th>設備序號</th><th>設備名稱</th><th>鎖定狀態</th><th>啟用狀態</th><th>建立時間</th></tr></thead>
+                                            <tbody>{devices.map((device) => (
+                                                <tr key={device.serial_number}>
+                                                    <td><Link className="inline-link account-code" href={`/manage/devices/${encodeURIComponent(device.serial_number)}`}>{device.serial_number}</Link></td>
+                                                    <td>{device.name ?? '-'}</td>
+                                                    <td>{device.is_locked ? '已上鎖' : '未上鎖'}</td>
+                                                    <td>{device.is_enabled ? '已啟用' : '已停用'}</td>
+                                                    <td>{formatDate(device.created_at)}</td>
+                                                </tr>
+                                            ))}</tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </section>
+                        )}
                     </section>
                 )}
             </ManageLayout>
