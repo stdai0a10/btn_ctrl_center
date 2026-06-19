@@ -3,9 +3,11 @@
 namespace Tests\Feature\Manage;
 
 use App\Models\Auth\UserEmail;
+use App\Models\Device;
 use App\Models\ManageActionLog;
 use App\Models\ManageLoginLog;
 use App\Models\User;
+use App\Models\Room;
 use App\Support\ManagementRbac;
 use Database\Seeders\ManagementRbacSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -82,6 +84,11 @@ class SystemAdminIntegrationTest extends TestCase
         $admin = User::factory()->create();
         $admin->assignRole(ManagementRbac::SYSTEM_ADMIN_ROLE);
         $target = $this->userWithEmail('target@example.com');
+        $room = Room::factory()->create(['created_by_user_id' => $target->id]);
+        $device = Device::factory()->create([
+            'serial_number' => 'DEVICE-SENSITIVE-CHECK',
+            'current_room_id' => $room->id,
+        ]);
 
         ManageLoginLog::query()->create([
             'user_id' => $target->id,
@@ -103,6 +110,9 @@ class SystemAdminIntegrationTest extends TestCase
             "/manage/api/service-managers/{$target->public_id}",
             '/manage/api/audit/login-failures',
             '/manage/api/audit/manage-actions',
+            '/manage/api/devices',
+            "/manage/api/devices/{$device->serial_number}",
+            "/manage/api/rooms/{$room->public_id}/devices",
         ] as $path) {
             $response = $this->actingAs($admin)
                 ->withSession($this->manageSession($admin))
@@ -184,6 +194,8 @@ class SystemAdminIntegrationTest extends TestCase
             'token',
             'access_token',
             'refresh_token',
+            'secret',
+            'secret_hash',
         ];
 
         foreach ($payload as $key => $value) {

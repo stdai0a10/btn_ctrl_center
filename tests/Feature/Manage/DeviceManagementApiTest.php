@@ -201,6 +201,38 @@ class DeviceManagementApiTest extends TestCase
         $this->assertDatabaseMissing('manage_action_logs', ['action' => 'devices.create']);
     }
 
+    public function test_transfer_logs_are_newest_first_paginated_and_keep_actor_snapshot(): void
+    {
+        $actor = User::factory()->create();
+        $device = Device::factory()->create(['serial_number' => 'DEVICE-HISTORY']);
+
+        foreach (range(1, 21) as $index) {
+            DeviceTransferLog::query()->create([
+                'device_id' => $device->id,
+                'from_room_id' => null,
+                'to_room_id' => null,
+                'transferred_by_user_id' => $actor->id,
+                'transferred_by_user_public_id_snapshot' => $actor->public_id,
+                'created_at' => now()->subMinutes(21 - $index),
+            ]);
+        }
+
+        $actorPublicId = $actor->public_id;
+        $actor->delete();
+
+        $this->asManageUser()
+            ->getJson('/manage/api/devices/DEVICE-HISTORY')
+            ->assertOk()
+            ->assertJsonPath('data.transfer_logs.pagination.per_page', 20)
+            ->assertJsonPath('data.transfer_logs.pagination.total', 21)
+            ->assertJsonPath('data.transfer_logs.pagination.last_page', 2)
+            ->assertJsonCount(20, 'data.transfer_logs.items')
+            ->assertJsonPath('data.transfer_logs.items.0.transferred_by_user_public_id', $actorPublicId);
+
+        $this->assertSame(21, DeviceTransferLog::query()->where('device_id', $device->id)->count());
+        $this->assertNull(DeviceTransferLog::query()->firstOrFail()->transferred_by_user_id);
+    }
+
     private function asManageUser(): static
     {
         return $this->actingAs($this->manager)->withSession($this->manageSession($this->manager));
