@@ -6,6 +6,7 @@ use App\Http\Controllers\ApiController;
 use App\Models\Device;
 use App\Models\DeviceTransferLog;
 use App\Models\Room;
+use App\Services\Manage\DeviceCatalogService;
 use App\Support\DeviceSerial;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -13,6 +14,22 @@ use Illuminate\Validation\Rule;
 
 class DeviceController extends ApiController
 {
+    public function store(Request $request, DeviceCatalogService $catalog)
+    {
+        $validated = $request->validate([
+            'serial_number' => ['required', 'string', 'max:100'],
+            'secret' => ['required', 'string', 'max:255', 'confirmed'],
+        ]);
+
+        $device = $catalog->create(
+            $request,
+            $validated['serial_number'],
+            $validated['secret'],
+        );
+
+        return $this->response($this->devicePayload($device), '設備主檔已建立。', 201);
+    }
+
     public function index(Request $request)
     {
         $validated = $request->validate([

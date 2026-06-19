@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Support\ManagementRbac;
 use Database\Seeders\ManagementRbacSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class DeviceManagementApiTest extends TestCase
@@ -123,6 +124,81 @@ class DeviceManagementApiTest extends TestCase
         $this->actingAs($this->manager)
             ->getJson('/manage/api/devices')
             ->assertUnauthorized();
+    }
+
+    public function test_system_admin_can_create_normalized_unassigned_device_with_hashed_secret(): void
+    {
+        $this->manager->removeRole(ManagementRbac::SERVICE_MANAGER_ROLE);
+        $this->manager->assignRole(ManagementRbac::SYSTEM_ADMIN_ROLE);
+
+        $response = $this->asManageUser()
+            ->withHeader('User-Agent', 'Device Admin Test')
+            ->postJson('/manage/api/devices', [
+                'serial_number' => '  device-new-001  ',
+                'secret' => 'physical-secret',
+                'secret_confirmation' => 'physical-secret',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.serial_number', 'DEVICE-NEW-001')
+            ->assertJsonPath('data.room', null)
+            ->assertJsonPath('data.is_locked', false)
+            ->assertJsonPath('data.is_enabled', true)
+            ->assertJsonMissingPath('data.secret')
+            ->assertJsonMissingPath('data.secret_hash');
+
+        $device = Device::query()->where('serial_number', 'DEVICE-NEW-001')->firstOrFail();
+
+        $this->assertNull($device->current_room_id);
+        $this->assertNull($device->name);
+        $this->assertTrue(Hash::check('physical-secret', $device->secret_hash));
+        $this->assertNotSame('physical-secret', $device->secret_hash);
+
+        $this->assertDatabaseHas('manage_action_logs', [
+            'actor_user_id' => $this->manager->id,
+            'action' => 'devices.create',
+            'target_type' => 'device',
+            'target_id' => $device->id,
+            'target_public_id' => 'DEVICE-NEW-001',
+        ]);
+
+        $encodedLog = json_encode(\App\Models\ManageActionLog::query()->latest('id')->firstOrFail()->metadata);
+        $this->assertStringNotContainsString('physical-secret', $encodedLog);
+        $this->assertStringNotContainsString('secret_hash', $encodedLog);
+        $this->assertSame('DEVICE-NEW-001', $response->json('data.serial_number'));
+    }
+
+    public function test_service_manager_cannot_create_device(): void
+    {
+        $this->asManageUser()
+            ->postJson('/manage/api/devices', [
+                'serial_number' => 'DEVICE-FORBIDDEN',
+                'secret' => 'physical-secret',
+                'secret_confirmation' => 'physical-secret',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('devices', ['serial_number' => 'DEVICE-FORBIDDEN']);
+    }
+
+    public function test_normalized_duplicate_serial_is_rejected_without_logging_secret(): void
+    {
+        $this->manager->removeRole(ManagementRbac::SERVICE_MANAGER_ROLE);
+        $this->manager->assignRole(ManagementRbac::SYSTEM_ADMIN_ROLE);
+        Device::factory()->create(['serial_number' => 'DEVICE-DUPLICATE']);
+
+        $this->asManageUser()
+            ->postJson('/manage/api/devices', [
+                'serial_number' => ' device-duplicate ',
+                'secret' => 'must-not-leak',
+                'secret_confirmation' => 'must-not-leak',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'DEVICE_SERIAL_ALREADY_EXISTS')
+            ->assertJsonMissingPath('data.secret')
+            ->assertJsonMissingPath('data.secret_hash');
+
+        $this->assertSame(1, Device::query()->where('serial_number', 'DEVICE-DUPLICATE')->count());
+        $this->assertDatabaseMissing('manage_action_logs', ['action' => 'devices.create']);
     }
 
     private function asManageUser(): static

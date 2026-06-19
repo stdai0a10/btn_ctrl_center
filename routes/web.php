@@ -111,6 +111,9 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
             Route::get('/devices', [ManageDeviceController::class, 'index'])
                 ->middleware('permission:manage.devices.view')
                 ->name('devices.index');
+            Route::post('/devices', [ManageDeviceController::class, 'store'])
+                ->middleware('permission:manage.devices.create')
+                ->name('devices.store');
             Route::get('/devices/{serial_number}', [ManageDeviceController::class, 'show'])
                 ->middleware('permission:manage.devices.detail')
                 ->name('devices.show');
