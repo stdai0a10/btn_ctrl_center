@@ -88,6 +88,24 @@ class DeviceController extends ApiController
         return $this->response($this->payload($device), '設備已解鎖。');
     }
 
+    public function enable(Request $request, Room $room, Device $device)
+    {
+        $this->authorize('manageDevices', $room);
+
+        $device = $this->devices->enable($room, $device);
+
+        return $this->response($this->payload($device), '設備已啟用。');
+    }
+
+    public function disable(Request $request, Room $room, Device $device)
+    {
+        $this->authorize('manageDevices', $room);
+
+        $device = $this->devices->disable($room, $device);
+
+        return $this->response($this->payload($device), '設備已停用。');
+    }
+
     private function payload(Device $device): array
     {
         return [
@@ -96,6 +114,7 @@ class DeviceController extends ApiController
             'current_room_id' => $device->current_room_id,
             'name' => $device->name,
             'is_locked' => $device->is_locked,
+            'is_enabled' => $device->is_enabled,
             'created_at' => $device->created_at?->toISOString(),
             'updated_at' => $device->updated_at?->toISOString(),
         ];

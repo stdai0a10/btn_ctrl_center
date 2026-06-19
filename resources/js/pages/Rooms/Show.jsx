@@ -228,7 +228,7 @@ export default function RoomShow({ roomPublicId }) {
                                     <article className="device-card" key={device.id}>
                                         <div>
                                             <strong>{device.name || device.serial_number}</strong>
-                                            <span>{device.serial_number} · {device.is_locked ? '已上鎖' : '未上鎖'}</span>
+                                            <span>{device.serial_number} · {device.is_locked ? '已上鎖' : '未上鎖'} · {device.is_enabled ? '已啟用' : '已停用'}</span>
                                         </div>
                                         {isOwner && (
                                             <>
@@ -237,6 +237,11 @@ export default function RoomShow({ roomPublicId }) {
                                                     <button type="button" onClick={() => run(() => window.axios.patch(`/api/rooms/${roomPublicId}/devices/${device.id}`, { name: deviceNames[device.id] ?? '' }), '設備已更新。')}>命名</button>
                                                 </div>
                                                 <div className="compact-actions">
+                                                    {device.is_enabled ? (
+                                                        <button type="button" className="button-ghost" onClick={() => run(() => window.axios.post(`/api/rooms/${roomPublicId}/devices/${device.id}/disable`), '設備已停用。')}>停用</button>
+                                                    ) : (
+                                                        <button type="button" onClick={() => run(() => window.axios.post(`/api/rooms/${roomPublicId}/devices/${device.id}/enable`), '設備已啟用。')}>啟用</button>
+                                                    )}
                                                     {device.is_locked ? (
                                                         <button type="button" className="button-ghost" onClick={() => run(() => window.axios.post(`/api/rooms/${roomPublicId}/devices/${device.id}/unlock`), '設備已解鎖。')}>解鎖</button>
                                                     ) : (

@@ -7,6 +7,7 @@ use App\Models\Device;
 use App\Models\DeviceTransferLog;
 use App\Models\Room;
 use App\Models\User;
+use App\Support\DeviceSerial;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -14,6 +15,8 @@ class DeviceService
 {
     public function attachToRoom(Room $room, User $actor, string $serialNumber, string $secret, ?string $name, bool $lock): Device
     {
+        $serialNumber = DeviceSerial::normalize($serialNumber);
+
         return DB::transaction(function () use ($room, $actor, $serialNumber, $secret, $name, $lock): Device {
             $device = Device::query()
                 ->where('serial_number', $serialNumber)
@@ -37,11 +40,15 @@ class DeviceService
             }
 
             $fromRoomId = $device->current_room_id;
+            $fromRoomPublicId = $fromRoomId === null
+                ? null
+                : Room::query()->withTrashed()->whereKey($fromRoomId)->value('public_id');
 
             $device->forceFill([
                 'current_room_id' => $room->id,
                 'name' => $name,
                 'is_locked' => $lock,
+                'is_enabled' => true,
             ])->save();
 
             DeviceTransferLog::query()->create([
@@ -49,6 +56,9 @@ class DeviceService
                 'from_room_id' => $fromRoomId,
                 'to_room_id' => $room->id,
                 'transferred_by_user_id' => $actor->id,
+                'from_room_public_id_snapshot' => $fromRoomPublicId,
+                'to_room_public_id_snapshot' => $room->public_id,
+                'transferred_by_user_public_id_snapshot' => $actor->public_id,
                 'created_at' => now(),
             ]);
 
@@ -83,6 +93,24 @@ class DeviceService
         return $device->refresh();
     }
 
+    public function enable(Room $room, Device $device): Device
+    {
+        $this->ensureDeviceInRoom($room, $device);
+
+        $device->forceFill(['is_enabled' => true])->save();
+
+        return $device->refresh();
+    }
+
+    public function disable(Room $room, Device $device): Device
+    {
+        $this->ensureDeviceInRoom($room, $device);
+
+        $device->forceFill(['is_enabled' => false])->save();
+
+        return $device->refresh();
+    }
+
     public function removeFromRoom(Room $room, Device $device): void
     {
         $this->ensureDeviceInRoom($room, $device);
@@ -95,6 +123,7 @@ class DeviceService
             'current_room_id' => null,
             'name' => null,
             'is_locked' => false,
+            'is_enabled' => true,
         ])->save();
     }
 
