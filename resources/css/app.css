@@ -476,6 +476,129 @@ button:disabled {
     box-shadow: 0 12px 28px rgba(31, 39, 35, 0.08);
 }
 
+.member-tabs-panel {
+    padding-bottom: 1.25rem;
+}
+
+.section-tabs {
+    display: flex;
+    gap: 0;
+    margin: 1rem -1rem 0;
+    padding: 0 1rem;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--soft-line);
+    scrollbar-width: thin;
+}
+
+.section-tab {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-width: 7rem;
+    min-height: 3rem;
+    border: 0;
+    border-radius: 0;
+    padding: 0.7rem 1rem;
+    background: transparent;
+    color: var(--muted);
+}
+
+.section-tab::after {
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 3px;
+    background: transparent;
+    content: '';
+}
+
+.section-tab:hover {
+    background: #f6f8f7;
+    color: var(--ink);
+}
+
+.section-tab.is-active {
+    color: var(--accent-dark);
+}
+
+.section-tab.is-active::after {
+    background: var(--accent);
+}
+
+.section-tab > span {
+    min-width: 1.5rem;
+    border-radius: 999px;
+    padding: 0.2rem 0.4rem;
+    background: #e9efed;
+    color: var(--muted);
+    font-size: 0.75rem;
+    line-height: 1;
+    text-align: center;
+}
+
+.section-tab.is-active > span {
+    background: #d8ebe7;
+    color: var(--accent-dark);
+}
+
+.section-tab-panel {
+    min-height: 8rem;
+    padding-top: 0.25rem;
+}
+
+.member-invite-form {
+    margin-top: 1rem;
+}
+
+.room-access-panel {
+    max-width: 44rem;
+    padding: 1.5rem;
+}
+
+.room-access-panel h2 {
+    margin-bottom: 0.75rem;
+}
+
+.room-access-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.25rem;
+    border: 1px solid var(--soft-line);
+    border-radius: 8px;
+    padding: 1rem;
+    background: #f6f8f7;
+}
+
+.room-access-status strong,
+.room-access-status span {
+    display: block;
+}
+
+.room-access-status span {
+    margin-top: 0.3rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.room-access-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.25rem;
+}
+
+.room-access-actions p {
+    margin: 0;
+}
+
 .item-list,
 .device-grid {
     display: grid;
@@ -1137,6 +1260,12 @@ button:disabled {
     .profile-display-row,
     .profile-inline-edit {
         align-items: stretch;
+    }
+
+    .room-access-status,
+    .room-access-actions {
+        align-items: stretch;
+        flex-direction: column;
     }
 
     .manage-login-frame {

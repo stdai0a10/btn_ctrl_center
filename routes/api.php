@@ -74,6 +74,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/room-join-requests/{joinRequest}/accept', [RoomJoinRequestController::class, 'accept']);
     Route::post('/room-join-requests/{joinRequest}/ignore', [RoomJoinRequestController::class, 'ignore']);
     Route::post('/room-join-requests/{joinRequest}/cancel', [RoomJoinRequestController::class, 'cancel']);
+    Route::post('/room-join-requests/{joinRequest}/restore', [RoomJoinRequestController::class, 'restore']);
 
     Route::get('/rooms/{room}/devices', [DeviceController::class, 'index']);
     Route::post('/rooms/{room}/devices', [DeviceController::class, 'store']);

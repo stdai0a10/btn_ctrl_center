@@ -19,7 +19,7 @@ class RoomJoinRequestService
                 throw new ApiException('User is already a room member.', 'ROOM_MEMBER_ALREADY_EXISTS');
             }
 
-            if ($this->pendingRequest($room, $requester)->lockForUpdate()->exists()) {
+            if ($this->activeRequest($room, $requester)->lockForUpdate()->exists()) {
                 throw new ApiException('A pending join request already exists.', 'ROOM_JOIN_REQUEST_ALREADY_PENDING');
             }
 
@@ -37,7 +37,22 @@ class RoomJoinRequestService
             throw new ApiException('This join request belongs to another user.', 'ROOM_JOIN_REQUEST_FORBIDDEN', 403);
         }
 
-        $this->transition($request, RoomJoinRequest::STATUS_CANCELLED, 'cancelled_at');
+        DB::transaction(function () use ($request): void {
+            $locked = RoomJoinRequest::query()->lockForUpdate()->findOrFail($request->id);
+
+            if (! in_array($locked->status, [
+                RoomJoinRequest::STATUS_PENDING,
+                RoomJoinRequest::STATUS_IGNORED,
+            ], true)) {
+                throw new ApiException('Join request cannot be cancelled.', 'ROOM_JOIN_REQUEST_NOT_ACTIVE');
+            }
+
+            $locked->forceFill([
+                'status' => RoomJoinRequest::STATUS_CANCELLED,
+                'cancelled_at' => now(),
+                'ignored_at' => null,
+            ])->save();
+        });
     }
 
     public function accept(RoomJoinRequest $request, User $owner): void
@@ -79,6 +94,29 @@ class RoomJoinRequestService
         $this->transition($request, RoomJoinRequest::STATUS_IGNORED, 'ignored_at');
     }
 
+    public function restore(RoomJoinRequest $request, User $owner): void
+    {
+        DB::transaction(function () use ($request, $owner): void {
+            $locked = RoomJoinRequest::query()
+                ->with('room')
+                ->lockForUpdate()
+                ->findOrFail($request->id);
+
+            if (! $locked->room->isOwner($owner)) {
+                throw new ApiException('Only room owners can restore join requests.', 'ROOM_OWNER_REQUIRED', 403);
+            }
+
+            if ($locked->status !== RoomJoinRequest::STATUS_IGNORED) {
+                throw new ApiException('Join request is not ignored.', 'ROOM_JOIN_REQUEST_NOT_IGNORED');
+            }
+
+            $locked->forceFill([
+                'status' => RoomJoinRequest::STATUS_PENDING,
+                'ignored_at' => null,
+            ])->save();
+        });
+    }
+
     private function transition(RoomJoinRequest $request, string $status, string $timestamp): void
     {
         DB::transaction(function () use ($request, $status, $timestamp): void {
@@ -100,11 +138,14 @@ class RoomJoinRequestService
         }
     }
 
-    private function pendingRequest(Room $room, User $requester)
+    private function activeRequest(Room $room, User $requester)
     {
         return RoomJoinRequest::query()
             ->where('room_id', $room->id)
             ->where('requester_user_id', $requester->id)
-            ->where('status', RoomJoinRequest::STATUS_PENDING);
+            ->whereIn('status', [
+                RoomJoinRequest::STATUS_PENDING,
+                RoomJoinRequest::STATUS_IGNORED,
+            ]);
     }
 }

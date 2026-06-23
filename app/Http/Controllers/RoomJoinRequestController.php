@@ -22,7 +22,7 @@ class RoomJoinRequestController extends ApiController
             ->where('requester_user_id', $request->user()->id)
             ->latest()
             ->get()
-            ->map(fn (RoomJoinRequest $joinRequest): array => $this->payload($joinRequest));
+            ->map(fn (RoomJoinRequest $joinRequest): array => $this->payload($joinRequest, true));
 
         $ownedRoomIds = $request->user()->rooms()
             ->wherePivot('role', Room::ROLE_OWNER)
@@ -75,13 +75,21 @@ class RoomJoinRequestController extends ApiController
         return $this->response(null, '加入申請已取消。');
     }
 
-    private function payload(RoomJoinRequest $joinRequest): array
+    public function restore(Request $request, RoomJoinRequest $joinRequest)
+    {
+        $this->joinRequests->restore($joinRequest, $request->user());
+
+        return $this->response(null, '加入申請已恢復為待決定。');
+    }
+
+    private function payload(RoomJoinRequest $joinRequest, bool $maskIgnored = false): array
     {
         $joinRequest->loadMissing(['room', 'requester', 'approver']);
+        $isMaskedIgnored = $maskIgnored && $joinRequest->status === RoomJoinRequest::STATUS_IGNORED;
 
         return [
             'id' => $joinRequest->id,
-            'status' => $joinRequest->status,
+            'status' => $isMaskedIgnored ? RoomJoinRequest::STATUS_PENDING : $joinRequest->status,
             'room' => [
                 'public_id' => $joinRequest->room->public_id,
                 'name' => $joinRequest->room->name,
@@ -90,7 +98,7 @@ class RoomJoinRequestController extends ApiController
             'approver' => $joinRequest->approver ? $this->userPayload($joinRequest->approver) : null,
             'created_at' => $joinRequest->created_at?->toISOString(),
             'accepted_at' => $joinRequest->accepted_at?->toISOString(),
-            'ignored_at' => $joinRequest->ignored_at?->toISOString(),
+            'ignored_at' => $isMaskedIgnored ? null : $joinRequest->ignored_at?->toISOString(),
             'cancelled_at' => $joinRequest->cancelled_at?->toISOString(),
         ];
     }

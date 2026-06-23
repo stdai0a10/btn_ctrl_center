@@ -82,6 +82,109 @@ class RoomDeviceManagementTest extends TestCase
         ]);
     }
 
+    public function test_non_member_can_view_restricted_room_summary_and_request_access(): void
+    {
+        [$owner, $visitor] = User::factory()->count(2)->create();
+        $room = $this->createRoom($owner, 'Shared Link Room');
+        Device::factory()->create([
+            'current_room_id' => $room->id,
+        ]);
+
+        $this->actingAs($visitor)
+            ->getJson("/api/rooms/{$room->public_id}")
+            ->assertOk()
+            ->assertJsonPath('data.public_id', $room->public_id)
+            ->assertJsonPath('data.name', 'Shared Link Room')
+            ->assertJsonPath('data.can_access', false)
+            ->assertJsonPath('data.role', null)
+            ->assertJsonPath('data.join_request', null)
+            ->assertJsonMissingPath('data.members')
+            ->assertJsonMissingPath('data.members_count');
+
+        $this->actingAs($visitor)
+            ->getJson("/api/rooms/{$room->public_id}/devices")
+            ->assertForbidden();
+
+        $joinRequestId = $this->actingAs($visitor)
+            ->postJson("/api/rooms/{$room->public_id}/join-requests")
+            ->assertCreated()
+            ->assertJsonPath('data.status', RoomJoinRequest::STATUS_PENDING)
+            ->json('data.id');
+
+        $this->actingAs($visitor)
+            ->getJson("/api/rooms/{$room->public_id}")
+            ->assertOk()
+            ->assertJsonPath('data.can_access', false)
+            ->assertJsonPath('data.join_request.id', $joinRequestId)
+            ->assertJsonPath('data.join_request.status', RoomJoinRequest::STATUS_PENDING)
+            ->assertJsonMissingPath('data.members');
+    }
+
+    public function test_ignored_join_request_is_hidden_from_requester_and_owner_can_restore_it_until_cancelled(): void
+    {
+        [$owner, $visitor] = User::factory()->count(2)->create();
+        $room = $this->createRoom($owner, 'Private Room');
+
+        $joinRequestId = $this->actingAs($visitor)
+            ->postJson("/api/rooms/{$room->public_id}/join-requests")
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->actingAs($owner)
+            ->postJson("/api/room-join-requests/{$joinRequestId}/ignore")
+            ->assertOk();
+
+        $this->assertDatabaseHas('room_join_requests', [
+            'id' => $joinRequestId,
+            'status' => RoomJoinRequest::STATUS_IGNORED,
+        ]);
+
+        $this->actingAs($visitor)
+            ->getJson("/api/rooms/{$room->public_id}")
+            ->assertOk()
+            ->assertJsonPath('data.join_request.status', RoomJoinRequest::STATUS_PENDING);
+
+        $this->actingAs($visitor)
+            ->getJson('/api/room-join-requests')
+            ->assertOk()
+            ->assertJsonPath('data.sent.0.status', RoomJoinRequest::STATUS_PENDING)
+            ->assertJsonPath('data.sent.0.ignored_at', null);
+
+        $this->actingAs($visitor)
+            ->postJson("/api/rooms/{$room->public_id}/join-requests")
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'ROOM_JOIN_REQUEST_ALREADY_PENDING');
+
+        $this->actingAs($owner)
+            ->postJson("/api/room-join-requests/{$joinRequestId}/restore")
+            ->assertOk();
+
+        $this->assertDatabaseHas('room_join_requests', [
+            'id' => $joinRequestId,
+            'status' => RoomJoinRequest::STATUS_PENDING,
+            'ignored_at' => null,
+        ]);
+
+        $this->actingAs($owner)
+            ->postJson("/api/room-join-requests/{$joinRequestId}/ignore")
+            ->assertOk();
+
+        $this->actingAs($visitor)
+            ->postJson("/api/room-join-requests/{$joinRequestId}/cancel")
+            ->assertOk();
+
+        $this->assertDatabaseHas('room_join_requests', [
+            'id' => $joinRequestId,
+            'status' => RoomJoinRequest::STATUS_CANCELLED,
+            'ignored_at' => null,
+        ]);
+
+        $this->actingAs($owner)
+            ->postJson("/api/room-join-requests/{$joinRequestId}/restore")
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'ROOM_JOIN_REQUEST_NOT_IGNORED');
+    }
+
     public function test_last_owner_leave_deletes_room_and_clears_locked_devices(): void
     {
         $owner = User::factory()->create();
