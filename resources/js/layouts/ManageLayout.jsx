@@ -1,11 +1,12 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { DoorOpen, LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen, ShieldAlert, ShieldCheck, Users } from 'lucide-react';
+import { Cpu, DoorOpen, LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen, ShieldAlert, ShieldCheck, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const navItems = [
     { label: '管理首頁', href: '/manage', icon: LayoutDashboard, permission: 'manage.dashboard.view' },
     { label: '使用者一覽', href: '/manage/users', icon: Users, permission: 'manage.users.view' },
     { label: '房間一覽', href: '/manage/rooms', icon: DoorOpen, permission: 'manage.rooms.view' },
+    { label: '設備一覽', href: '/manage/devices', icon: Cpu, permission: 'manage.devices.view' },
     { label: '服務管理員', href: '/manage/service-managers', icon: ShieldCheck, permission: 'manage.service_managers.view' },
     { label: '審計資料', href: '/manage/audit', icon: ShieldAlert, permission: 'audit.access' },
 ];

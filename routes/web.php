@@ -3,6 +3,7 @@
 use App\Http\Controllers\Manage\AuditController as ManageAuditController;
 use App\Http\Controllers\Manage\AuthController as ManageAuthController;
 use App\Http\Controllers\Manage\DashboardController as ManageDashboardController;
+use App\Http\Controllers\Manage\DeviceController as ManageDeviceController;
 use App\Http\Controllers\Manage\RoomController as ManageRoomController;
 use App\Http\Controllers\Manage\ServiceManagerController as ManageServiceManagerController;
 use App\Http\Controllers\Manage\UserController as ManageUserController;
@@ -56,6 +57,17 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
         ]))
             ->middleware('permission:manage.rooms.detail')
             ->name('rooms.show');
+        Route::get('/devices', fn () => Inertia::render('Manage/Devices/Index'))
+            ->middleware('permission:manage.devices.view')
+            ->name('devices.index');
+        Route::get('/devices/create', fn () => Inertia::render('Manage/Devices/Create'))
+            ->middleware('permission:manage.devices.create')
+            ->name('devices.create');
+        Route::get('/devices/{serial_number}', fn (string $serialNumber) => Inertia::render('Manage/Devices/Show', [
+            'serialNumber' => $serialNumber,
+        ]))
+            ->middleware('permission:manage.devices.detail')
+            ->name('devices.show');
         Route::get('/service-managers', fn () => Inertia::render('Manage/ServiceManagers/Index'))
             ->middleware('permission:manage.service_managers.view')
             ->name('service-managers.index');
@@ -104,6 +116,18 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
             Route::get('/rooms/{room_public_id}/users', [ManageRoomController::class, 'users'])
                 ->middleware('permission:manage.rooms.detail')
                 ->name('rooms.users');
+            Route::get('/rooms/{room_public_id}/devices', [ManageDeviceController::class, 'roomDevices'])
+                ->middleware(['permission:manage.rooms.detail', 'permission:manage.devices.view'])
+                ->name('rooms.devices');
+            Route::get('/devices', [ManageDeviceController::class, 'index'])
+                ->middleware('permission:manage.devices.view')
+                ->name('devices.index');
+            Route::post('/devices', [ManageDeviceController::class, 'store'])
+                ->middleware('permission:manage.devices.create')
+                ->name('devices.store');
+            Route::get('/devices/{serial_number}', [ManageDeviceController::class, 'show'])
+                ->middleware('permission:manage.devices.detail')
+                ->name('devices.show');
             Route::get('/service-managers', [ManageServiceManagerController::class, 'index'])
                 ->middleware('permission:manage.service_managers.view')
                 ->name('service-managers.index');

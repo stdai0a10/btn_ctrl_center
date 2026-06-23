@@ -32,8 +32,10 @@ export default function ManageUserShow({ userPublicId }) {
             <ManageLayout>
                 <section className="page-header">
                     <p className="eyebrow">Management User</p>
-                    <h1>{user ? user.display_name : '使用者詳細'}</h1>
-                    <Link className="text-link" href="/manage/users">返回使用者一覽</Link>
+                    <div className="manage-detail-header">
+                        <h1>{user ? user.display_name : '使用者詳細'}</h1>
+                        <Link className="button-link manage-header-action" href="/manage/users">返回使用者一覽</Link>
+                    </div>
                 </section>
 
                 {loading && <p className="muted">載入中...</p>}

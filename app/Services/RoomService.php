@@ -44,6 +44,7 @@ class RoomService
                     'current_room_id' => null,
                     'name' => null,
                     'is_locked' => false,
+                    'is_enabled' => true,
                 ]);
 
             RoomInvitation::query()
