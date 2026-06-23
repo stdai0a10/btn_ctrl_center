@@ -39,8 +39,10 @@ export default function ManageRoomShow({ roomPublicId }) {
             <ManageLayout>
                 <section className="page-header">
                     <p className="eyebrow">Management Room</p>
-                    <h1>{room ? room.name : '房間詳細'}</h1>
-                    <Link className="text-link" href="/manage/rooms">返回房間一覽</Link>
+                    <div className="manage-detail-header">
+                        <h1>{room ? room.name : '房間詳細'}</h1>
+                        <Link className="button-link manage-header-action" href="/manage/rooms">返回房間一覽</Link>
+                    </div>
                 </section>
 
                 {loading && <p className="muted">載入中...</p>}

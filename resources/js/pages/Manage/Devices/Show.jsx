@@ -35,8 +35,10 @@ export default function ManageDeviceShow({ serialNumber }) {
             <ManageLayout>
                 <section className="page-header">
                     <p className="eyebrow">Device Detail</p>
-                    <h1>{device?.serial_number ?? serialNumber}</h1>
-                    <Link className="text-link" href="/manage/devices">返回設備一覽</Link>
+                    <div className="manage-detail-header">
+                        <h1>{device?.serial_number ?? serialNumber}</h1>
+                        <Link className="button-link manage-header-action" href="/manage/devices">返回設備一覽</Link>
+                    </div>
                 </section>
                 {loading && <p className="muted">載入中...</p>}
                 {error && <div className="notice error">{error}</div>}
