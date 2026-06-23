@@ -81,4 +81,6 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::delete('/rooms/{room}/devices/{device}', [DeviceController::class, 'destroy']);
     Route::post('/rooms/{room}/devices/{device}/lock', [DeviceController::class, 'lock']);
     Route::post('/rooms/{room}/devices/{device}/unlock', [DeviceController::class, 'unlock']);
+    Route::post('/rooms/{room}/devices/{device}/enable', [DeviceController::class, 'enable']);
+    Route::post('/rooms/{room}/devices/{device}/disable', [DeviceController::class, 'disable']);
 });

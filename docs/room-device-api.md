@@ -61,6 +61,10 @@ Error responses use the shared shape:
 | DELETE | `/api/rooms/{room}/devices/{device}` | Owner only. Device must be unlocked. |
 | POST | `/api/rooms/{room}/devices/{device}/lock` | Owner only. |
 | POST | `/api/rooms/{room}/devices/{device}/unlock` | Owner only. |
+| POST | `/api/rooms/{room}/devices/{device}/enable` | Owner only. Idempotently enables the device. |
+| POST | `/api/rooms/{room}/devices/{device}/disable` | Owner only. Idempotently disables the device. |
+
+Device serial numbers are trimmed and normalized to uppercase. A room owner can only attach a device that already exists in the device catalog; unknown serial numbers are never created automatically. Attaching, transferring, removing, or releasing a room resets `is_enabled` to `true`.
 
 ## Error Codes
 
