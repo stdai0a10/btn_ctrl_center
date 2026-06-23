@@ -38,6 +38,30 @@ export default function Invitations() {
         }
     }
 
+    async function updateReceivedJoinRequest(item, operation, status, success) {
+        setMessage('');
+        setError('');
+
+        try {
+            const response = await window.axios.post(`/api/room-join-requests/${item.id}/${operation}`);
+            setJoinRequests((current) => ({
+                ...current,
+                received: current.received.map((request) => (
+                    request.id === item.id
+                        ? {
+                            ...request,
+                            status,
+                            ignored_at: status === 'ignored' ? new Date().toISOString() : null,
+                        }
+                        : request
+                )),
+            }));
+            setMessage(response.data.message ?? success);
+        } catch (caught) {
+            setError(errorMessage(caught));
+        }
+    }
+
     return (
         <>
             <Head title="我的邀請" />
@@ -45,7 +69,7 @@ export default function Invitations() {
                 <section className="page-header">
                     <p className="eyebrow">Invitations</p>
                     <h1>我的邀請</h1>
-                    <Link className="text-link" href="/rooms">返回設備管理</Link>
+                    <Link className="text-link" href="/rooms">返回房間管理</Link>
                 </section>
 
                 {message && <div className="notice success">{message}</div>}
@@ -73,7 +97,41 @@ export default function Invitations() {
                         )}
                     />
                     <RequestPanel title="已送出邀請" items={invitations.sent} empty="沒有送出邀請" />
-                    <RequestPanel title="收到申請" items={joinRequests.received} empty="沒有收到申請" />
+                    <RequestPanel
+                        title="收到申請"
+                        items={joinRequests.received}
+                        empty="沒有收到申請"
+                        renderActions={(item) => {
+                            if (item.status === 'pending') {
+                                return (
+                                    <>
+                                        <button type="button" onClick={() => action(`/api/room-join-requests/${item.id}/accept`, '申請已接受。')}>接受</button>
+                                        <button
+                                            type="button"
+                                            className="button-ghost"
+                                            onClick={() => updateReceivedJoinRequest(item, 'ignore', 'ignored', '申請已忽略。')}
+                                        >
+                                            忽略
+                                        </button>
+                                    </>
+                                );
+                            }
+
+                            if (item.status === 'ignored') {
+                                return (
+                                    <button
+                                        type="button"
+                                        className="button-ghost"
+                                        onClick={() => updateReceivedJoinRequest(item, 'restore', 'pending', '申請已恢復為待決定。')}
+                                    >
+                                        恢復待決定
+                                    </button>
+                                );
+                            }
+
+                            return null;
+                        }}
+                    />
                 </section>
             </AppLayout>
         </>

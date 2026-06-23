@@ -49,7 +49,8 @@ Error responses use the shared shape:
 | POST | `/api/rooms/{room}/join-requests` | Non-member asks to join. |
 | POST | `/api/room-join-requests/{joinRequest}/accept` | Room owner only. Adds requester as `resident`. |
 | POST | `/api/room-join-requests/{joinRequest}/ignore` | Room owner only. |
-| POST | `/api/room-join-requests/{joinRequest}/cancel` | Requester only. |
+| POST | `/api/room-join-requests/{joinRequest}/cancel` | Requester only. Cancels pending or owner-ignored requests. |
+| POST | `/api/room-join-requests/{joinRequest}/restore` | Room owner only. Restores an ignored request to pending unless it was cancelled. |
 
 ## Devices
 
@@ -77,6 +78,8 @@ Device serial numbers are trimmed and normalized to uppercase. A room owner can 
 | `ROOM_INVITATION_NOT_PENDING` | Invitation has already been handled. |
 | `ROOM_JOIN_REQUEST_ALREADY_PENDING` | A pending join request already exists for the same room and requester. |
 | `ROOM_JOIN_REQUEST_NOT_PENDING` | Join request has already been handled. |
+| `ROOM_JOIN_REQUEST_NOT_ACTIVE` | Join request can no longer be cancelled. |
+| `ROOM_JOIN_REQUEST_NOT_IGNORED` | Only ignored requests can be restored. |
 | `ROOM_OWNER_CANNOT_REMOVE_SELF` | Owners must use the leave endpoint to remove themselves. |
 | `ROOM_OWNER_REQUIRED` | The operation requires owner permission. |
 | `DEVICE_NOT_FOUND` | Serial number does not match a registered device. |

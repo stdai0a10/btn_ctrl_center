@@ -12,6 +12,7 @@ export default function RoomShow({ roomPublicId }) {
     const [devices, setDevices] = useState([]);
     const [invitations, setInvitations] = useState([]);
     const [joinRequests, setJoinRequests] = useState([]);
+    const [accessJoinRequest, setAccessJoinRequest] = useState(null);
     const [inviteePublicId, setInviteePublicId] = useState('');
     const [deviceForm, setDeviceForm] = useState(emptyDeviceForm);
     const [deviceNames, setDeviceNames] = useState({});
@@ -20,11 +21,14 @@ export default function RoomShow({ roomPublicId }) {
     const [openDeviceMenu, setOpenDeviceMenu] = useState(null);
     const [addDeviceDialogOpen, setAddDeviceDialogOpen] = useState(false);
     const [addDeviceResult, setAddDeviceResult] = useState(null);
+    const [memberPendingRemoval, setMemberPendingRemoval] = useState(null);
+    const [removeMemberError, setRemoveMemberError] = useState('');
     const [devicePendingRemoval, setDevicePendingRemoval] = useState(null);
     const [removeDeviceError, setRemoveDeviceError] = useState('');
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [errors, setErrors] = useState({});
+    const [activeMemberTab, setActiveMemberTab] = useState('members');
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const deviceMenuRef = useRef(null);
@@ -67,21 +71,48 @@ export default function RoomShow({ roomPublicId }) {
 
     async function reload() {
         setLoading(true);
-        const [roomResponse, deviceResponse, invitationResponse, joinRequestResponse] = await Promise.all([
-            window.axios.get(`/api/rooms/${roomPublicId}`),
+        const roomResponse = await window.axios.get(`/api/rooms/${roomPublicId}`);
+        const nextRoom = roomResponse.data.data;
+
+        setRoom(nextRoom);
+        setAccessJoinRequest(nextRoom.join_request ?? null);
+
+        if (!nextRoom.can_access) {
+            setDevices([]);
+            setInvitations([]);
+            setJoinRequests([]);
+            setLoading(false);
+            return;
+        }
+
+        const [deviceResponse, invitationResponse, joinRequestResponse] = await Promise.all([
             window.axios.get(`/api/rooms/${roomPublicId}/devices`),
             window.axios.get('/api/room-invitations'),
             window.axios.get('/api/room-join-requests'),
         ]);
 
-        const nextRoom = roomResponse.data.data;
         const nextDevices = deviceResponse.data.data;
-        setRoom(nextRoom);
         setDevices(nextDevices);
         setDeviceNames(Object.fromEntries(nextDevices.map((device) => [device.id, device.name ?? ''])));
         setInvitations(invitationResponse.data.data.sent.filter((item) => item.room.public_id === roomPublicId));
         setJoinRequests(joinRequestResponse.data.data.received.filter((item) => item.room.public_id === roomPublicId));
         setLoading(false);
+    }
+
+    async function requestRoomAccess() {
+        await run(
+            () => window.axios.post(`/api/rooms/${roomPublicId}/join-requests`),
+            '加入申請已送出。',
+        );
+    }
+
+    async function cancelRoomAccessRequest() {
+        if (!accessJoinRequest) return;
+
+        await run(
+            () => window.axios.post(`/api/room-join-requests/${accessJoinRequest.id}/cancel`),
+            '加入申請已取消。',
+        );
     }
 
     async function run(task, success) {
@@ -94,6 +125,32 @@ export default function RoomShow({ roomPublicId }) {
             const response = await task();
             setMessage(response?.data?.message ?? success);
             await reload();
+        } catch (caught) {
+            setError(errorMessage(caught));
+            setErrors(formErrors(caught));
+        } finally {
+            setProcessing(false);
+        }
+    }
+
+    async function updateJoinRequestStatus(joinRequest, operation, status, success) {
+        setProcessing(true);
+        setMessage('');
+        setError('');
+        setErrors({});
+
+        try {
+            const response = await window.axios.post(`/api/room-join-requests/${joinRequest.id}/${operation}`);
+            setJoinRequests((current) => current.map((item) => (
+                item.id === joinRequest.id
+                    ? {
+                        ...item,
+                        status,
+                        ignored_at: status === 'ignored' ? new Date().toISOString() : null,
+                    }
+                    : item
+            )));
+            setMessage(response.data.message ?? success);
         } catch (caught) {
             setError(errorMessage(caught));
             setErrors(formErrors(caught));
@@ -257,6 +314,32 @@ export default function RoomShow({ roomPublicId }) {
         }
     }
 
+    async function removeMember() {
+        if (!memberPendingRemoval) return;
+
+        setProcessing(true);
+        setMessage('');
+        setError('');
+        setRemoveMemberError('');
+
+        try {
+            const response = await window.axios.delete(
+                `/api/rooms/${roomPublicId}/members/${memberPendingRemoval.public_id}`,
+            );
+            setRoom((current) => ({
+                ...current,
+                members: current.members.filter((member) => member.public_id !== memberPendingRemoval.public_id),
+                members_count: Math.max(0, (current.members_count ?? current.members.length) - 1),
+            }));
+            setMessage(response.data.message ?? '成員已移除。');
+            setMemberPendingRemoval(null);
+        } catch (caught) {
+            setRemoveMemberError(errorMessage(caught));
+        } finally {
+            setProcessing(false);
+        }
+    }
+
     function cancelEditingDeviceName(device) {
         setDeviceNames((current) => ({ ...current, [device.id]: device.name ?? '' }));
         setEditingDeviceId(null);
@@ -316,98 +399,204 @@ export default function RoomShow({ roomPublicId }) {
                 {!loading && room && (
                     <>
                         <section className="page-header">
-                            <p className="eyebrow">{isOwner ? 'Owner' : 'Resident'}</p>
+                            <p className="eyebrow">{room.can_access ? (isOwner ? 'Owner' : 'Resident') : 'Restricted'}</p>
                             <h1>{room.name}</h1>
-                            <div className="actions-row">
-                                <button type="button" className="button-ghost" onClick={leaveRoom} disabled={processing}>退出</button>
-                                {isOwner && <button type="button" className="button-danger" onClick={deleteRoom} disabled={processing}>刪除</button>}
-                            </div>
+                            {room.can_access && (
+                                <div className="actions-row">
+                                    <button type="button" className="button-ghost" onClick={leaveRoom} disabled={processing}>退出</button>
+                                    {isOwner && <button type="button" className="button-danger" onClick={deleteRoom} disabled={processing}>刪除</button>}
+                                </div>
+                            )}
                         </section>
 
                         {message && <div className="notice success">{message}</div>}
                         {error && <div className="notice error">{error}</div>}
 
-                        <section className="grid-2">
-                            <section className="panel">
-                                <div className="panel-heading">
-                                    <h2>成員</h2>
-                                    <span className="status-pill">{room.members.length} 人</span>
-                                </div>
-                                <div className="item-list">
-                                    {room.members.map((member) => (
-                                        <article className="list-item" key={member.public_id}>
-                                            <div>
-                                                <strong>{member.display_name}</strong>
-                                                <span>{member.role === 'owner' ? '房主' : '住戶'} · {member.public_id}</span>
-                                            </div>
-                                            {isOwner && (
-                                                <div className="compact-actions">
-                                                    {member.role === 'resident' && (
-                                                        <button type="button" onClick={() => run(() => window.axios.patch(`/api/rooms/${roomPublicId}/members/${member.public_id}/role`, { role: 'owner' }), '身份已更新。')}>升為房主</button>
-                                                    )}
-                                                    {member.role === 'owner' && ownerCount > 1 && (
-                                                        <button type="button" className="button-ghost" onClick={() => run(() => window.axios.patch(`/api/rooms/${roomPublicId}/members/${member.public_id}/role`, { role: 'resident' }), '身份已更新。')}>改為住戶</button>
-                                                    )}
-                                                    <button type="button" className="button-danger" onClick={() => run(() => window.axios.delete(`/api/rooms/${roomPublicId}/members/${member.public_id}`), '成員已移除。')}>移除</button>
-                                                </div>
-                                            )}
-                                        </article>
-                                    ))}
-                                </div>
-                            </section>
+                        {!room.can_access ? (
+                            <section className="panel room-access-panel">
+                                <p className="eyebrow">Access Required</p>
+                                <h2>你目前無法使用這個房間</h2>
+                                <p className="lede">你不是這個房間的成員，因此無法查看成員、邀請、申請與設備內容。你可以送出加入申請，等待房主審核。</p>
 
-                            <section className="panel stack">
-                                <h2>邀請</h2>
-                                {isOwner && (
-                                    <form className="inline-form" onSubmit={invite}>
-                                        <label>
-                                            使用者 ID
-                                            <input value={inviteePublicId} onChange={(event) => setInviteePublicId(event.target.value)} required />
-                                            {errors.invitee_public_id?.map((item) => <small className="field-error" key={item}>{item}</small>)}
-                                        </label>
-                                        <button type="submit" disabled={processing}>送出</button>
-                                    </form>
+                                {accessJoinRequest?.status === 'pending' ? (
+                                    <div className="room-access-status">
+                                        <div>
+                                            <strong>加入申請審核中</strong>
+                                            <span>房主接受後，你就能查看並使用這個房間。</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="button-ghost"
+                                            onClick={cancelRoomAccessRequest}
+                                            disabled={processing}
+                                        >
+                                            {processing ? '處理中...' : '取消申請'}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="room-access-actions">
+                                        {accessJoinRequest?.status === 'cancelled' && (
+                                            <p className="muted">先前的申請已取消，你可以再次提出申請。</p>
+                                        )}
+                                        <button type="button" onClick={requestRoomAccess} disabled={processing}>
+                                            {processing ? '送出中...' : '申請加入房間'}
+                                        </button>
+                                    </div>
                                 )}
-                                <MiniList
-                                    items={invitations}
-                                    empty="沒有邀請"
-                                    renderText={(item) => `${item.invitee.display_name} · ${item.status}`}
-                                    renderActions={(item) => isOwner && item.status === 'pending' && (
-                                        <button type="button" className="button-ghost" onClick={() => run(() => window.axios.post(`/api/room-invitations/${item.id}/cancel`), '邀請已取消。')}>取消</button>
-                                    )}
-                                />
                             </section>
+                        ) : (
+                            <>
+                        <section className="panel member-tabs-panel">
+                            <div className="panel-heading">
+                                <h2>房間成員</h2>
+                                <span className="status-pill">{room.members.length} 人</span>
+                            </div>
 
-                            <section className="panel">
-                                <h2>加入申請</h2>
-                                <MiniList
-                                    items={joinRequests}
-                                    empty="沒有加入申請"
-                                    renderText={(item) => `${item.requester.display_name} · ${item.status}`}
-                                    renderActions={(item) => isOwner && item.status === 'pending' && (
-                                        <>
-                                            <button type="button" onClick={() => run(() => window.axios.post(`/api/room-join-requests/${item.id}/accept`), '申請已接受。')}>接受</button>
-                                            <button type="button" className="button-ghost" onClick={() => run(() => window.axios.post(`/api/room-join-requests/${item.id}/ignore`), '申請已忽略。')}>忽略</button>
-                                        </>
-                                    )}
-                                />
-                            </section>
+                            <div className="section-tabs" role="tablist" aria-label="房間成員管理">
+                                <button
+                                    type="button"
+                                    className={`section-tab ${activeMemberTab === 'members' ? 'is-active' : ''}`}
+                                    role="tab"
+                                    aria-selected={activeMemberTab === 'members'}
+                                    aria-controls="room-members-panel"
+                                    onClick={() => setActiveMemberTab('members')}
+                                >
+                                    成員
+                                    <span>{room.members.length}</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`section-tab ${activeMemberTab === 'requests' ? 'is-active' : ''}`}
+                                    role="tab"
+                                    aria-selected={activeMemberTab === 'requests'}
+                                    aria-controls="room-requests-panel"
+                                    onClick={() => setActiveMemberTab('requests')}
+                                >
+                                    申請
+                                    <span>{joinRequests.length}</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`section-tab ${activeMemberTab === 'invitations' ? 'is-active' : ''}`}
+                                    role="tab"
+                                    aria-selected={activeMemberTab === 'invitations'}
+                                    aria-controls="room-invitations-panel"
+                                    onClick={() => setActiveMemberTab('invitations')}
+                                >
+                                    邀請
+                                    <span>{invitations.length}</span>
+                                </button>
+                            </div>
 
-                            <section className="panel stack">
-                                <h2>加入設備</h2>
-                                {isOwner ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setErrors({});
-                                            setAddDeviceDialogOpen(true);
-                                        }}
-                                        disabled={processing}
-                                    >
-                                        加入設備
-                                    </button>
-                                ) : <p className="muted">僅房主可加入設備</p>}
-                            </section>
+                            {activeMemberTab === 'members' && (
+                                <div id="room-members-panel" className="section-tab-panel" role="tabpanel">
+                                    <div className="item-list">
+                                        {room.members.map((member) => (
+                                            <article className="list-item" key={member.public_id}>
+                                                <div>
+                                                    <strong>{member.display_name}</strong>
+                                                    <span>{member.role === 'owner' ? '房主' : '住戶'} · {member.public_id}</span>
+                                                </div>
+                                                {isOwner && (
+                                                    <div className="compact-actions">
+                                                        {member.role === 'resident' && (
+                                                            <button type="button" onClick={() => run(() => window.axios.patch(`/api/rooms/${roomPublicId}/members/${member.public_id}/role`, { role: 'owner' }), '身份已更新。')}>升為房主</button>
+                                                        )}
+                                                        {member.role === 'owner' && ownerCount > 1 && (
+                                                            <button type="button" className="button-ghost" onClick={() => run(() => window.axios.patch(`/api/rooms/${roomPublicId}/members/${member.public_id}/role`, { role: 'resident' }), '身份已更新。')}>改為住戶</button>
+                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            className="button-danger"
+                                                            onClick={() => {
+                                                                setRemoveMemberError('');
+                                                                setMemberPendingRemoval(member);
+                                                            }}
+                                                        >
+                                                            移除
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </article>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeMemberTab === 'requests' && (
+                                <div id="room-requests-panel" className="section-tab-panel" role="tabpanel">
+                                    <MiniList
+                                        items={joinRequests}
+                                        empty="沒有加入申請"
+                                        renderText={(item) => `${item.requester.display_name} · ${item.status}`}
+                                        renderActions={(item) => isOwner && item.status === 'pending' && (
+                                            <>
+                                                <button type="button" onClick={() => run(() => window.axios.post(`/api/room-join-requests/${item.id}/accept`), '申請已接受。')}>接受</button>
+                                                <button
+                                                    type="button"
+                                                    className="button-ghost"
+                                                    onClick={() => updateJoinRequestStatus(item, 'ignore', 'ignored', '申請已忽略。')}
+                                                >
+                                                    忽略
+                                                </button>
+                                            </>
+                                        )}
+                                        renderSecondaryActions={(item) => isOwner && item.status === 'ignored' && (
+                                            <button
+                                                type="button"
+                                                className="button-ghost"
+                                                onClick={() => updateJoinRequestStatus(
+                                                    item,
+                                                    'restore',
+                                                    'pending',
+                                                    '申請已恢復為待決定。',
+                                                )}
+                                            >
+                                                恢復待決定
+                                            </button>
+                                        )}
+                                    />
+                                </div>
+                            )}
+
+                            {activeMemberTab === 'invitations' && (
+                                <div id="room-invitations-panel" className="section-tab-panel" role="tabpanel">
+                                    {isOwner && (
+                                        <form className="inline-form member-invite-form" onSubmit={invite}>
+                                            <label>
+                                                使用者 ID
+                                                <input value={inviteePublicId} onChange={(event) => setInviteePublicId(event.target.value)} required />
+                                                {errors.invitee_public_id?.map((item) => <small className="field-error" key={item}>{item}</small>)}
+                                            </label>
+                                            <button type="submit" disabled={processing}>送出邀請</button>
+                                        </form>
+                                    )}
+                                    <MiniList
+                                        items={invitations}
+                                        empty="沒有邀請"
+                                        renderText={(item) => `${item.invitee.display_name} · ${item.status}`}
+                                        renderActions={(item) => isOwner && item.status === 'pending' && (
+                                            <button type="button" className="button-ghost" onClick={() => run(() => window.axios.post(`/api/room-invitations/${item.id}/cancel`), '邀請已取消。')}>取消</button>
+                                        )}
+                                    />
+                                </div>
+                            )}
+                        </section>
+
+                        <section className="panel stack">
+                            <h2>加入設備</h2>
+                            {isOwner ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setErrors({});
+                                        setAddDeviceDialogOpen(true);
+                                    }}
+                                    disabled={processing}
+                                >
+                                    加入設備
+                                </button>
+                            ) : <p className="muted">僅房主可加入設備</p>}
                         </section>
 
                         <section className="panel">
@@ -587,6 +776,35 @@ export default function RoomShow({ roomPublicId }) {
                                 </div>
                             </Dialog>
                         )}
+
+                        {memberPendingRemoval && (
+                            <Dialog
+                                title="確認移除成員"
+                                onClose={() => setMemberPendingRemoval(null)}
+                                closeDisabled={processing}
+                            >
+                                <p className="dialog-description">
+                                    確定要將「{memberPendingRemoval.display_name}」從房間移除嗎？
+                                </p>
+                                <p className="muted">移除後，該使用者將無法查看或操作這個房間的設備。</p>
+                                {removeMemberError && <div className="notice error">{removeMemberError}</div>}
+                                <div className="dialog-actions">
+                                    <button
+                                        type="button"
+                                        className="button-ghost"
+                                        onClick={() => setMemberPendingRemoval(null)}
+                                        disabled={processing}
+                                    >
+                                        取消
+                                    </button>
+                                    <button type="button" className="button-danger" onClick={removeMember} disabled={processing}>
+                                        {processing ? '移除中...' : '確認移除'}
+                                    </button>
+                                </div>
+                            </Dialog>
+                        )}
+                            </>
+                        )}
                     </>
                 )}
             </AppLayout>
@@ -624,7 +842,7 @@ function Dialog({ title, children, onClose, closeDisabled = false }) {
     );
 }
 
-function MiniList({ items, empty, renderText, renderActions }) {
+function MiniList({ items, empty, renderText, renderActions, renderSecondaryActions }) {
     if (items.length === 0) {
         return <p className="muted">{empty}</p>;
     }
@@ -634,7 +852,10 @@ function MiniList({ items, empty, renderText, renderActions }) {
             {items.map((item) => (
                 <article className="list-item" key={item.id}>
                     <span>{renderText(item)}</span>
-                    <div className="compact-actions">{renderActions?.(item)}</div>
+                    <div className="compact-actions">
+                        {renderActions?.(item)}
+                        {renderSecondaryActions?.(item)}
+                    </div>
                 </article>
             ))}
         </div>

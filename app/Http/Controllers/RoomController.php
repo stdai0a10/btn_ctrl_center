@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Room;
+use App\Models\RoomJoinRequest;
 use App\Services\RoomService;
 use Illuminate\Http\Request;
 
@@ -41,7 +42,27 @@ class RoomController extends ApiController
 
     public function show(Request $request, Room $room)
     {
-        $this->authorize('view', $room);
+        if (! $room->isMember($request->user())) {
+            $joinRequest = RoomJoinRequest::query()
+                ->where('room_id', $room->id)
+                ->where('requester_user_id', $request->user()->id)
+                ->latest()
+                ->first();
+
+            return $this->response([
+                'public_id' => $room->public_id,
+                'name' => $room->name,
+                'role' => null,
+                'can_access' => false,
+                'join_request' => $joinRequest ? [
+                    'id' => $joinRequest->id,
+                    'status' => $joinRequest->status === RoomJoinRequest::STATUS_IGNORED
+                        ? RoomJoinRequest::STATUS_PENDING
+                        : $joinRequest->status,
+                    'created_at' => $joinRequest->created_at?->toISOString(),
+                ] : null,
+            ]);
+        }
 
         return $this->response($this->payload($room->load(['members.primaryEmail']), $request, true));
     }
@@ -77,6 +98,7 @@ class RoomController extends ApiController
             'public_id' => $room->public_id,
             'name' => $room->name,
             'role' => $room->roleFor($request->user()),
+            'can_access' => true,
             'members_count' => $room->members_count ?? $room->members()->count(),
             'created_at' => $room->created_at?->toISOString(),
             'updated_at' => $room->updated_at?->toISOString(),
