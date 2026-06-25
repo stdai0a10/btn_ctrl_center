@@ -153,6 +153,14 @@ class ProductController extends ApiController
         return $this->response($this->functionPayload($function), '產品功能已更新。');
     }
 
+    public function destroyFunction(Request $request, ProductCatalogService $catalog, string $code)
+    {
+        $function = ProductFunction::query()->where('code', $code)->firstOrFail();
+        $catalog->deleteFunction($request, $function);
+
+        return $this->response(null, '產品功能已刪除。');
+    }
+
     private function productPayload(Product $product): array
     {
         return [

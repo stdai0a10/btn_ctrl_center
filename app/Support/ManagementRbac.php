@@ -32,6 +32,7 @@ final class ManagementRbac
         'manage.products.update',
         'manage.product_functions.create',
         'manage.product_functions.update',
+        'manage.product_functions.delete',
         'audit.access',
         'audit.login_failures.view',
         'audit.manage_actions.view',

@@ -658,6 +658,19 @@ button:disabled {
     min-width: 0;
 }
 
+.product-function-create-form {
+    align-items: end;
+    margin-top: 1rem;
+}
+
+.product-function-create-form label {
+    flex: 1 1 22rem;
+}
+
+.product-function-create-form button {
+    min-height: 3.05rem;
+}
+
 .button-ghost {
     border: 1px solid var(--line);
     background: #fffdf7;

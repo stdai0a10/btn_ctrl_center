@@ -158,6 +158,9 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
             Route::patch('/product-functions/{code}', [ManageProductController::class, 'updateFunction'])
                 ->middleware('permission:manage.product_functions.update')
                 ->name('product-functions.update');
+            Route::delete('/product-functions/{code}', [ManageProductController::class, 'destroyFunction'])
+                ->middleware('permission:manage.product_functions.delete')
+                ->name('product-functions.destroy');
             Route::get('/service-managers', [ManageServiceManagerController::class, 'index'])
                 ->middleware('permission:manage.service_managers.view')
                 ->name('service-managers.index');

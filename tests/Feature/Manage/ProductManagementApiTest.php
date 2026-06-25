@@ -136,7 +136,7 @@ class ProductManagementApiTest extends TestCase
         $this->assertSame(1, Product::query()->where('model_number', 'BTN-001')->count());
     }
 
-    public function test_system_admin_can_create_and_update_product_functions(): void
+    public function test_system_admin_can_create_update_and_delete_product_functions(): void
     {
         $this->manager->removeRole(ManagementRbac::SERVICE_MANAGER_ROLE);
         $this->manager->assignRole(ManagementRbac::SYSTEM_ADMIN_ROLE);
@@ -160,8 +160,15 @@ class ProductManagementApiTest extends TestCase
             ->assertJsonPath('data.code', $code)
             ->assertJsonPath('data.description', '長按觸發');
 
+        $this->asManageUser()
+            ->deleteJson("/manage/api/product-functions/{$code}")
+            ->assertOk()
+            ->assertJsonPath('message', '產品功能已刪除。');
+
         $this->assertDatabaseHas('manage_action_logs', ['action' => 'product_functions.create']);
         $this->assertDatabaseHas('manage_action_logs', ['action' => 'product_functions.update']);
+        $this->assertDatabaseHas('manage_action_logs', ['action' => 'product_functions.delete']);
+        $this->assertDatabaseMissing('product_functions', ['code' => $code]);
     }
 
     public function test_service_manager_cannot_mutate_products_or_functions(): void
@@ -194,6 +201,12 @@ class ProductManagementApiTest extends TestCase
                 'description' => 'Forbidden',
             ])
             ->assertForbidden();
+
+        $this->asManageUser()
+            ->deleteJson("/manage/api/product-functions/{$function->code}")
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('product_functions', ['code' => $function->code]);
     }
 
     public function test_product_details_include_device_room_summary(): void

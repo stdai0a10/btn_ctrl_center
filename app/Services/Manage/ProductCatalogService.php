@@ -153,6 +153,32 @@ class ProductCatalogService
         });
     }
 
+    public function deleteFunction(Request $request, ProductFunction $function): void
+    {
+        DB::transaction(function () use ($request, $function): void {
+            $function->loadMissing('product');
+            $before = $this->functionAuditPayload($function);
+            $productPublicId = $function->product?->public_id;
+            $targetId = $function->id;
+            $targetPublicId = $function->code;
+
+            $function->delete();
+
+            $this->logger->forManageUser(
+                request: $request,
+                action: 'product_functions.delete',
+                targetType: 'product_function',
+                targetId: $targetId,
+                targetPublicId: $targetPublicId,
+                metadata: [
+                    'product_public_id' => $productPublicId,
+                    'before' => $before,
+                    'after' => null,
+                ],
+            );
+        });
+    }
+
     private function duplicateModel(): ApiException
     {
         return new ApiException(

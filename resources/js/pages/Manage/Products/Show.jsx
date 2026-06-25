@@ -1,5 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { EllipsisVertical, Pencil, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import ManageLayout from '../../../layouts/ManageLayout';
 import { errorMessage, formErrors } from '../../../lib/http';
 
@@ -8,15 +10,21 @@ export default function ManageProductShow({ productPublicId }) {
     const canUpdateProduct = permissions.includes('manage.products.update');
     const canCreateFunction = permissions.includes('manage.product_functions.create');
     const canUpdateFunction = permissions.includes('manage.product_functions.update');
+    const canDeleteFunction = permissions.includes('manage.product_functions.delete');
     const [product, setProduct] = useState(null);
     const [editForm, setEditForm] = useState({ model_number: '', name: '' });
     const [functionForm, setFunctionForm] = useState({ description: '' });
-    const [functionEdits, setFunctionEdits] = useState({});
+    const [functionActionMenu, setFunctionActionMenu] = useState(null);
+    const [editingFunction, setEditingFunction] = useState(null);
+    const [editFunctionForm, setEditFunctionForm] = useState({ description: '' });
+    const [deletingFunction, setDeletingFunction] = useState(null);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState({});
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const functionMenuRef = useRef(null);
+    const canManageFunctions = canUpdateFunction || canDeleteFunction;
 
     useEffect(() => {
         loadProduct(1);
@@ -33,7 +41,6 @@ export default function ManageProductShow({ productPublicId }) {
             const nextProduct = response.data.data;
             setProduct(nextProduct);
             setEditForm({ model_number: nextProduct.model_number, name: nextProduct.name });
-            setFunctionEdits(Object.fromEntries((nextProduct.functions ?? []).map((item) => [item.code, item.description])));
         } catch (caught) {
             setError(errorMessage(caught, '產品詳細資料載入失敗。'));
         } finally {
@@ -67,7 +74,6 @@ export default function ManageProductShow({ productPublicId }) {
         try {
             const response = await window.axios.post(`/manage/api/products/${productPublicId}/functions`, functionForm);
             setProduct({ ...product, functions: [...(product.functions ?? []), response.data.data], function_count: (product.function_count ?? 0) + 1 });
-            setFunctionEdits({ ...functionEdits, [response.data.data.code]: response.data.data.description });
             setFunctionForm({ description: '' });
             setMessage(response.data.message ?? '產品功能已建立。');
         } catch (caught) {
@@ -77,22 +83,108 @@ export default function ManageProductShow({ productPublicId }) {
         }
     }
 
-    async function updateFunction(code) {
+    useEffect(() => {
+        if (!functionActionMenu) return undefined;
+
+        function handlePointerDown(event) {
+            if (functionMenuRef.current?.contains(event.target)) return;
+
+            const trigger = event.target.closest?.('[data-function-action-trigger]');
+            if (trigger?.dataset.functionActionTrigger === functionActionMenu.function.code) return;
+
+            setFunctionActionMenu(null);
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Escape') setFunctionActionMenu(null);
+        }
+
+        document.addEventListener('pointerdown', handlePointerDown);
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            document.removeEventListener('pointerdown', handlePointerDown);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [functionActionMenu]);
+
+    function toggleFunctionMenu(event, item) {
+        if (functionActionMenu?.function.code === item.code) {
+            setFunctionActionMenu(null);
+            return;
+        }
+
+        const rect = event.currentTarget.getBoundingClientRect();
+        const menuWidth = 184;
+        const left = Math.min(Math.max(12, rect.right - menuWidth), window.innerWidth - menuWidth - 12);
+        const shouldOpenAbove = rect.bottom + 112 > window.innerHeight;
+
+        setFunctionActionMenu({
+            function: item,
+            position: {
+                left,
+                top: shouldOpenAbove ? rect.top - 8 : rect.bottom + 8,
+                placement: shouldOpenAbove ? 'top' : 'bottom',
+            },
+        });
+    }
+
+    function openEditFunctionDialog(item) {
+        setFunctionActionMenu(null);
+        setErrors({});
+        setMessage('');
+        setEditingFunction(item);
+        setEditFunctionForm({ description: item.description ?? '' });
+    }
+
+    function openDeleteFunctionDialog(item) {
+        setFunctionActionMenu(null);
+        setErrors({});
+        setMessage('');
+        setDeletingFunction(item);
+    }
+
+    async function updateFunction(event) {
+        event.preventDefault();
+        if (!editingFunction) return;
+
         setProcessing(true);
         setErrors({});
         setMessage('');
 
         try {
-            const response = await window.axios.patch(`/manage/api/product-functions/${code}`, {
-                description: functionEdits[code] ?? '',
-            });
+            const response = await window.axios.patch(`/manage/api/product-functions/${editingFunction.code}`, editFunctionForm);
             setProduct({
                 ...product,
-                functions: product.functions.map((item) => item.code === code ? response.data.data : item),
+                functions: product.functions.map((item) => item.code === editingFunction.code ? response.data.data : item),
             });
+            setEditingFunction(null);
             setMessage(response.data.message ?? '產品功能已更新。');
         } catch (caught) {
             setErrors(formErrors(caught, '產品功能更新失敗。'));
+        } finally {
+            setProcessing(false);
+        }
+    }
+
+    async function deleteFunction() {
+        if (!deletingFunction) return;
+
+        setProcessing(true);
+        setErrors({});
+        setMessage('');
+
+        try {
+            const response = await window.axios.delete(`/manage/api/product-functions/${deletingFunction.code}`);
+            setProduct({
+                ...product,
+                functions: product.functions.filter((item) => item.code !== deletingFunction.code),
+                function_count: Math.max((product.function_count ?? 1) - 1, 0),
+            });
+            setDeletingFunction(null);
+            setMessage(response.data.message ?? '產品功能已刪除。');
+        } catch (caught) {
+            setErrors(formErrors(caught, '產品功能刪除失敗。'));
         } finally {
             setProcessing(false);
         }
@@ -156,7 +248,7 @@ export default function ManageProductShow({ productPublicId }) {
                                 <span className="status-pill">{product.functions.length} 項</span>
                             </div>
                             {canCreateFunction && (
-                                <form className="inline-form" onSubmit={createFunction}>
+                                <form className="inline-form product-function-create-form" onSubmit={createFunction}>
                                     <label>
                                         新增功能說明
                                         <input value={functionForm.description} onChange={(event) => setFunctionForm({ description: event.target.value })} maxLength={255} required />
@@ -169,22 +261,57 @@ export default function ManageProductShow({ productPublicId }) {
                             {product.functions.length > 0 && (
                                 <div className="table-wrap">
                                     <table className="data-table">
-                                        <thead><tr><th>功能代碼</th><th>功能說明</th><th>建立時間</th><th>更新時間</th>{canUpdateFunction && <th>操作</th>}</tr></thead>
+                                        <thead><tr><th>功能代碼</th><th>功能說明</th><th>最近更新時間</th>{canManageFunctions && <th>操作</th>}</tr></thead>
                                         <tbody>{product.functions.map((item) => (
                                             <tr key={item.code}>
                                                 <td className="account-code">{item.code}</td>
-                                                <td>
-                                                    {canUpdateFunction ? (
-                                                        <input value={functionEdits[item.code] ?? ''} onChange={(event) => setFunctionEdits({ ...functionEdits, [item.code]: event.target.value })} maxLength={255} />
-                                                    ) : item.description}
-                                                </td>
-                                                <td>{formatDate(item.created_at)}</td>
-                                                <td>{formatDate(item.updated_at)}</td>
-                                                {canUpdateFunction && <td><button type="button" className="button-ghost" disabled={processing} onClick={() => updateFunction(item.code)}>儲存</button></td>}
+                                                <td>{item.description}</td>
+                                                <td>{formatDate(latestTimestamp(item.created_at, item.updated_at))}</td>
+                                                {canManageFunctions && (
+                                                    <td>
+                                                        <button
+                                                            type="button"
+                                                            className="table-action-trigger"
+                                                            data-function-action-trigger={item.code}
+                                                            aria-label={`${item.code} 操作`}
+                                                            aria-expanded={functionActionMenu?.function.code === item.code}
+                                                            aria-haspopup="menu"
+                                                            disabled={processing}
+                                                            onClick={(event) => toggleFunctionMenu(event, item)}
+                                                        >
+                                                            <EllipsisVertical size={19} strokeWidth={2.4} />
+                                                        </button>
+                                                    </td>
+                                                )}
                                             </tr>
                                         ))}</tbody>
                                     </table>
                                 </div>
+                            )}
+                            {functionActionMenu && createPortal(
+                                <div
+                                    ref={functionMenuRef}
+                                    className={`table-action-menu-list is-${functionActionMenu.position.placement}`}
+                                    role="menu"
+                                    style={{
+                                        left: functionActionMenu.position.left,
+                                        top: functionActionMenu.position.top,
+                                    }}
+                                >
+                                    {canUpdateFunction && (
+                                        <button type="button" role="menuitem" onClick={() => openEditFunctionDialog(functionActionMenu.function)}>
+                                            <Pencil size={17} />
+                                            修改功能說明
+                                        </button>
+                                    )}
+                                    {canDeleteFunction && (
+                                        <button type="button" role="menuitem" className="is-danger" onClick={() => openDeleteFunctionDialog(functionActionMenu.function)}>
+                                            <Trash2 size={17} />
+                                            刪除產品功能
+                                        </button>
+                                    )}
+                                </div>,
+                                document.body,
                             )}
                         </section>
 
@@ -212,6 +339,38 @@ export default function ManageProductShow({ productPublicId }) {
                         </section>
                     </section>
                 )}
+                {editingFunction && (
+                    <Dialog title="修改功能說明" onClose={() => setEditingFunction(null)} closeDisabled={processing}>
+                        {errors.form?.map((item) => <div className="notice error" key={item}>{item}</div>)}
+                        <form className="dialog-form stack" onSubmit={updateFunction}>
+                            <label>
+                                功能代碼
+                                <input value={editingFunction.code} disabled />
+                            </label>
+                            <label>
+                                功能說明
+                                <input value={editFunctionForm.description} onChange={(event) => setEditFunctionForm({ description: event.target.value })} maxLength={255} required autoFocus />
+                                {errors.description?.map((item) => <small className="field-error" key={item}>{item}</small>)}
+                            </label>
+                            <div className="dialog-actions">
+                                <button type="button" className="button-ghost" disabled={processing} onClick={() => setEditingFunction(null)}>取消</button>
+                                <button type="submit" disabled={processing}>{processing ? '儲存中...' : '儲存'}</button>
+                            </div>
+                        </form>
+                    </Dialog>
+                )}
+                {deletingFunction && (
+                    <Dialog title="刪除產品功能" onClose={() => setDeletingFunction(null)} closeDisabled={processing}>
+                        {errors.form?.map((item) => <div className="notice error" key={item}>{item}</div>)}
+                        <p className="dialog-description">
+                            確定要刪除產品功能「{deletingFunction.code}」嗎？此操作會移除功能說明「{deletingFunction.description}」。
+                        </p>
+                        <div className="dialog-actions">
+                            <button type="button" className="button-ghost" disabled={processing} onClick={() => setDeletingFunction(null)}>取消</button>
+                            <button type="button" className="button-danger" disabled={processing} onClick={deleteFunction}>{processing ? '刪除中...' : '確認刪除'}</button>
+                        </div>
+                    </Dialog>
+                )}
             </ManageLayout>
         </>
     );
@@ -232,7 +391,41 @@ function Pagination({ pagination, loading, onPage }) {
     );
 }
 
+function Dialog({ title, children, onClose, closeDisabled = false }) {
+    useEffect(() => {
+        function handleKeyDown(event) {
+            if (event.key === 'Escape' && !closeDisabled) onClose();
+        }
+
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [closeDisabled, onClose]);
+
+    return createPortal(
+        <div className="app-dialog-backdrop" role="presentation" onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !closeDisabled) onClose();
+        }}>
+            <section className="app-dialog" role="dialog" aria-modal="true" aria-labelledby="product-function-dialog-title">
+                <div className="app-dialog-heading">
+                    <h2 id="product-function-dialog-title">{title}</h2>
+                    <button type="button" className="app-dialog-close" aria-label="關閉" disabled={closeDisabled} onClick={onClose}>×</button>
+                </div>
+                {children}
+            </section>
+        </div>,
+        document.body,
+    );
+}
+
 function formatDate(value) {
     if (!value) return '-';
     return new Intl.DateTimeFormat('zh-TW', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+}
+
+function latestTimestamp(createdAt, updatedAt) {
+    if (!createdAt) return updatedAt;
+    if (!updatedAt) return createdAt;
+
+    return new Date(updatedAt) > new Date(createdAt) ? updatedAt : createdAt;
 }
