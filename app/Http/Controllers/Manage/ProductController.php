@@ -129,6 +129,14 @@ class ProductController extends ApiController
         return $this->response($this->productPayload($product), '產品主檔已更新。');
     }
 
+    public function lock(Request $request, ProductCatalogService $catalog, string $productPublicId)
+    {
+        $product = Product::query()->where('public_id', $productPublicId)->firstOrFail();
+        $product = $catalog->lockProduct($request, $product);
+
+        return $this->response($this->productPayload($product), '產品已鎖定。');
+    }
+
     public function storeFunction(Request $request, ProductCatalogService $catalog, string $productPublicId)
     {
         $validated = $request->validate([
@@ -167,6 +175,7 @@ class ProductController extends ApiController
             'public_id' => $product->public_id,
             'model_number' => $product->model_number,
             'name' => $product->name,
+            'is_locked' => $product->is_locked,
             'function_count' => $product->functions_count ?? $product->functions()->count(),
             'device_count' => $product->devices_count ?? $product->devices()->count(),
             'created_at' => $product->created_at?->toISOString(),

@@ -30,6 +30,7 @@ final class ManagementRbac
         'manage.devices.create',
         'manage.products.create',
         'manage.products.update',
+        'manage.products.lock',
         'manage.product_functions.create',
         'manage.product_functions.update',
         'manage.product_functions.delete',

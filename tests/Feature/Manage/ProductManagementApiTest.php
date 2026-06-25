@@ -119,6 +119,72 @@ class ProductManagementApiTest extends TestCase
         ]);
     }
 
+    public function test_system_admin_can_lock_product_and_locked_product_cannot_be_changed(): void
+    {
+        $this->manager->removeRole(ManagementRbac::SERVICE_MANAGER_ROLE);
+        $this->manager->assignRole(ManagementRbac::SYSTEM_ADMIN_ROLE);
+        $product = Product::factory()->create([
+            'model_number' => 'BTN-LOCK',
+            'name' => 'Lockable Product',
+        ]);
+        $function = ProductFunction::factory()->create([
+            'product_id' => $product->id,
+            'description' => 'Before lock',
+        ]);
+
+        $this->asManageUser()
+            ->postJson("/manage/api/products/{$product->public_id}/lock")
+            ->assertOk()
+            ->assertJsonPath('data.is_locked', true)
+            ->assertJsonPath('message', '產品已鎖定。');
+
+        $this->assertTrue($product->refresh()->is_locked);
+
+        $this->asManageUser()
+            ->patchJson("/manage/api/products/{$product->public_id}", [
+                'model_number' => 'BTN-LOCK-UPDATED',
+                'name' => 'Updated',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'PRODUCT_LOCKED');
+
+        $this->asManageUser()
+            ->postJson("/manage/api/products/{$product->public_id}/functions", [
+                'description' => 'After lock',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'PRODUCT_LOCKED');
+
+        $this->asManageUser()
+            ->patchJson("/manage/api/product-functions/{$function->code}", [
+                'description' => 'Updated after lock',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'PRODUCT_LOCKED');
+
+        $this->asManageUser()
+            ->deleteJson("/manage/api/product-functions/{$function->code}")
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'PRODUCT_LOCKED');
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id,
+            'model_number' => 'BTN-LOCK',
+            'name' => 'Lockable Product',
+            'is_locked' => true,
+        ]);
+        $this->assertDatabaseHas('product_functions', [
+            'id' => $function->id,
+            'description' => 'Before lock',
+        ]);
+        $this->assertDatabaseHas('manage_action_logs', [
+            'actor_user_id' => $this->manager->id,
+            'action' => 'products.lock',
+            'target_type' => 'product',
+            'target_public_id' => $product->public_id,
+        ]);
+    }
+
     public function test_duplicate_product_model_number_is_rejected(): void
     {
         $this->manager->removeRole(ManagementRbac::SERVICE_MANAGER_ROLE);
@@ -188,6 +254,10 @@ class ProductManagementApiTest extends TestCase
                 'model_number' => 'BTN-FORBIDDEN',
                 'name' => 'Forbidden',
             ])
+            ->assertForbidden();
+
+        $this->asManageUser()
+            ->postJson("/manage/api/products/{$product->public_id}/lock")
             ->assertForbidden();
 
         $this->asManageUser()

@@ -54,6 +54,8 @@ class ProductCatalogService
 
     public function updateProduct(Request $request, Product $product, string $modelNumber, string $name): Product
     {
+        $this->ensureProductUnlocked($product);
+
         $modelNumber = ProductModelNumber::normalize($modelNumber);
 
         if (Product::query()
@@ -102,6 +104,8 @@ class ProductCatalogService
 
     public function createFunction(Request $request, Product $product, string $description): ProductFunction
     {
+        $this->ensureProductUnlocked($product);
+
         return DB::transaction(function () use ($request, $product, $description): ProductFunction {
             $function = $product->functions()->create([
                 'description' => $description,
@@ -128,6 +132,7 @@ class ProductCatalogService
     {
         return DB::transaction(function () use ($request, $function, $description): ProductFunction {
             $function->loadMissing('product');
+            $this->ensureProductUnlocked($function->product);
             $before = $this->functionAuditPayload($function);
 
             $function->forceFill([
@@ -157,6 +162,7 @@ class ProductCatalogService
     {
         DB::transaction(function () use ($request, $function): void {
             $function->loadMissing('product');
+            $this->ensureProductUnlocked($function->product);
             $before = $this->functionAuditPayload($function);
             $productPublicId = $function->product?->public_id;
             $targetId = $function->id;
@@ -179,12 +185,50 @@ class ProductCatalogService
         });
     }
 
+    public function lockProduct(Request $request, Product $product): Product
+    {
+        if ($product->is_locked) {
+            return $product;
+        }
+
+        return DB::transaction(function () use ($request, $product): Product {
+            $before = $this->auditPayload($product);
+
+            $product->forceFill(['is_locked' => true])->save();
+            $product->refresh();
+
+            $this->logger->forManageUser(
+                request: $request,
+                action: 'products.lock',
+                targetType: 'product',
+                targetId: $product->id,
+                targetPublicId: $product->public_id,
+                metadata: [
+                    'before' => $before,
+                    'after' => $this->auditPayload($product),
+                ],
+            );
+
+            return $product;
+        });
+    }
+
     private function duplicateModel(): ApiException
     {
         return new ApiException(
             'Product model number already exists.',
             'PRODUCT_MODEL_ALREADY_EXISTS',
         );
+    }
+
+    private function ensureProductUnlocked(?Product $product): void
+    {
+        if ($product?->is_locked) {
+            throw new ApiException(
+                'Product is locked.',
+                'PRODUCT_LOCKED',
+            );
+        }
     }
 
     /**
@@ -196,6 +240,7 @@ class ProductCatalogService
             'public_id' => $product->public_id,
             'model_number' => $product->model_number,
             'name' => $product->name,
+            'is_locked' => $product->is_locked,
         ];
     }
 

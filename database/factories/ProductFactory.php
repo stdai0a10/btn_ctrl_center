@@ -20,6 +20,7 @@ class ProductFactory extends Factory
             'public_id' => Product::newPublicId(),
             'model_number' => ProductModelNumber::normalize('BTN-'.Str::upper(Str::random(8))),
             'name' => fake()->words(2, true),
+            'is_locked' => false,
         ];
     }
 }

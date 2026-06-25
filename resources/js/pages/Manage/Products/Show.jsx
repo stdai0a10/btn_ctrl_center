@@ -1,5 +1,5 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { EllipsisVertical, Pencil, Trash2 } from 'lucide-react';
+import { EllipsisVertical, Lock, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import ManageLayout from '../../../layouts/ManageLayout';
@@ -8,6 +8,7 @@ import { errorMessage, formErrors } from '../../../lib/http';
 export default function ManageProductShow({ productPublicId }) {
     const permissions = usePage().props.auth?.manage_permissions ?? [];
     const canUpdateProduct = permissions.includes('manage.products.update');
+    const canLockProduct = permissions.includes('manage.products.lock');
     const canCreateFunction = permissions.includes('manage.product_functions.create');
     const canUpdateFunction = permissions.includes('manage.product_functions.update');
     const canDeleteFunction = permissions.includes('manage.product_functions.delete');
@@ -18,13 +19,15 @@ export default function ManageProductShow({ productPublicId }) {
     const [editingFunction, setEditingFunction] = useState(null);
     const [editFunctionForm, setEditFunctionForm] = useState({ description: '' });
     const [deletingFunction, setDeletingFunction] = useState(null);
+    const [lockingProduct, setLockingProduct] = useState(false);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState({});
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const functionMenuRef = useRef(null);
-    const canManageFunctions = canUpdateFunction || canDeleteFunction;
+    const productLocked = product?.is_locked ?? false;
+    const canManageFunctions = !productLocked && (canUpdateFunction || canDeleteFunction);
 
     useEffect(() => {
         loadProduct(1);
@@ -60,6 +63,23 @@ export default function ManageProductShow({ productPublicId }) {
             setMessage(response.data.message ?? '產品已更新。');
         } catch (caught) {
             setErrors(formErrors(caught, '產品更新失敗。'));
+        } finally {
+            setProcessing(false);
+        }
+    }
+
+    async function lockProduct() {
+        setProcessing(true);
+        setErrors({});
+        setMessage('');
+
+        try {
+            const response = await window.axios.post(`/manage/api/products/${productPublicId}/lock`);
+            setProduct({ ...product, ...response.data.data });
+            setLockingProduct(false);
+            setMessage(response.data.message ?? '產品已鎖定。');
+        } catch (caught) {
+            setErrors(formErrors(caught, '產品鎖定失敗。'));
         } finally {
             setProcessing(false);
         }
@@ -200,7 +220,14 @@ export default function ManageProductShow({ productPublicId }) {
                     <p className="eyebrow">Product Detail</p>
                     <div className="manage-detail-header">
                         <h1>{product?.model_number ?? productPublicId}</h1>
-                        <Link className="button-link manage-header-action" href="/manage/products">返回產品一覽</Link>
+                        <div className="actions-row">
+                            {product && canLockProduct && !product.is_locked && (
+                                <button type="button" className="button-danger manage-header-action" disabled={processing} onClick={() => setLockingProduct(true)}>
+                                    鎖定產品
+                                </button>
+                            )}
+                            <Link className="button-link manage-header-action" href="/manage/products">返回產品一覽</Link>
+                        </div>
                     </div>
                 </section>
 
@@ -212,18 +239,25 @@ export default function ManageProductShow({ productPublicId }) {
                 {product && (
                     <section className="grid-2">
                         <section className="panel">
-                            <div className="panel-heading"><h2>產品資料</h2><span className="status-pill">{product.device_count} 部設備</span></div>
+                            <div className="panel-heading">
+                                <h2>產品資料</h2>
+                                <div className="actions-row">
+                                    <span className="status-pill">{product.is_locked ? '已鎖定' : '未鎖定'}</span>
+                                    <span className="status-pill">{product.device_count} 部設備</span>
+                                </div>
+                            </div>
                             <dl className="detail-list">
                                 <Detail label="產品 ID" value={product.public_id} />
                                 <Detail label="產品型號" value={product.model_number} />
                                 <Detail label="產品名稱" value={product.name} />
+                                <Detail label="鎖定狀態" value={product.is_locked ? '已鎖定' : '未鎖定'} />
                                 <Detail label="功能數量" value={product.function_count} />
                                 <Detail label="建立時間" value={formatDate(product.created_at)} />
                                 <Detail label="更新時間" value={formatDate(product.updated_at)} />
                             </dl>
                         </section>
 
-                        {canUpdateProduct && (
+                        {canUpdateProduct && !product.is_locked && (
                             <section className="panel">
                                 <h2>修改產品</h2>
                                 <form className="stack" onSubmit={updateProduct}>
@@ -241,13 +275,19 @@ export default function ManageProductShow({ productPublicId }) {
                                 </form>
                             </section>
                         )}
+                        {product.is_locked && (
+                            <section className="panel">
+                                <h2>產品已鎖定</h2>
+                                <p className="muted">此產品已鎖定，型號、名稱與產品功能不可再修改。</p>
+                            </section>
+                        )}
 
                         <section className="panel manage-wide-panel">
                             <div className="panel-heading">
                                 <h2>產品功能</h2>
                                 <span className="status-pill">{product.functions.length} 項</span>
                             </div>
-                            {canCreateFunction && (
+                            {canCreateFunction && !product.is_locked && (
                                 <form className="inline-form product-function-create-form" onSubmit={createFunction}>
                                     <label>
                                         新增功能說明
@@ -257,6 +297,7 @@ export default function ManageProductShow({ productPublicId }) {
                                     <button type="submit" disabled={processing}>新增功能</button>
                                 </form>
                             )}
+                            {product.is_locked && <p className="muted">產品已鎖定，不能新增、修改或刪除產品功能。</p>}
                             {product.functions.length === 0 && <p className="muted">尚未建立產品功能</p>}
                             {product.functions.length > 0 && (
                                 <div className="table-wrap">
@@ -357,6 +398,21 @@ export default function ManageProductShow({ productPublicId }) {
                                 <button type="submit" disabled={processing}>{processing ? '儲存中...' : '儲存'}</button>
                             </div>
                         </form>
+                    </Dialog>
+                )}
+                {lockingProduct && (
+                    <Dialog title="鎖定產品" onClose={() => setLockingProduct(false)} closeDisabled={processing}>
+                        {errors.form?.map((item) => <div className="notice error" key={item}>{item}</div>)}
+                        <p className="dialog-description">
+                            確定要鎖定產品「{product.model_number} · {product.name}」嗎？鎖定後不能解鎖，且產品型號、名稱與功能都不能再修改。
+                        </p>
+                        <div className="dialog-actions">
+                            <button type="button" className="button-ghost" disabled={processing} onClick={() => setLockingProduct(false)}>取消</button>
+                            <button type="button" className="button-danger" disabled={processing} onClick={lockProduct}>
+                                <Lock size={17} />
+                                {processing ? '鎖定中...' : '確認鎖定'}
+                            </button>
+                        </div>
                     </Dialog>
                 )}
                 {deletingFunction && (

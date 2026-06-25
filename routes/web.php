@@ -152,6 +152,9 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
             Route::patch('/products/{product_public_id}', [ManageProductController::class, 'update'])
                 ->middleware('permission:manage.products.update')
                 ->name('products.update');
+            Route::post('/products/{product_public_id}/lock', [ManageProductController::class, 'lock'])
+                ->middleware('permission:manage.products.lock')
+                ->name('products.lock');
             Route::post('/products/{product_public_id}/functions', [ManageProductController::class, 'storeFunction'])
                 ->middleware('permission:manage.product_functions.create')
                 ->name('products.functions.store');

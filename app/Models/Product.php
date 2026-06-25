@@ -17,7 +17,15 @@ class Product extends Model
         'public_id',
         'model_number',
         'name',
+        'is_locked',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_locked' => 'boolean',
+        ];
+    }
 
     protected static function booted(): void
     {
