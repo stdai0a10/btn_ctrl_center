@@ -14,6 +14,7 @@ class Device extends Model
     use HasFactory;
 
     protected $fillable = [
+        'product_id',
         'serial_number',
         'secret_hash',
         'current_room_id',
@@ -37,6 +38,11 @@ class Device extends Model
     public function currentRoom(): BelongsTo
     {
         return $this->belongsTo(Room::class, 'current_room_id')->withTrashed();
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
     }
 
     public function transferLogs(): HasMany

@@ -17,6 +17,8 @@ final class ManagementRbac
         'manage.rooms.detail',
         'manage.devices.view',
         'manage.devices.detail',
+        'manage.products.view',
+        'manage.products.detail',
     ];
 
     public const SYSTEM_ADMIN_PERMISSIONS = [
@@ -26,6 +28,10 @@ final class ManagementRbac
         'manage.service_managers.grant',
         'manage.service_managers.revoke',
         'manage.devices.create',
+        'manage.products.create',
+        'manage.products.update',
+        'manage.product_functions.create',
+        'manage.product_functions.update',
         'audit.access',
         'audit.login_failures.view',
         'audit.manage_actions.view',
