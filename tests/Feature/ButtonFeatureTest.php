@@ -159,6 +159,60 @@ class ButtonFeatureTest extends TestCase
         ]);
     }
 
+    public function test_frontend_timeout_does_not_cancel_active_device_job(): void
+    {
+        $owner = User::factory()->create();
+        [$device, $function] = $this->createSelectableDevice($owner, secret: 'runner-secret');
+        $button = $this->createButton($owner, $device, $function);
+
+        $jobPublicId = $this->actingAs($owner)
+            ->postJson('/api/button-actions', [
+                'button_public_id' => $button,
+                'request_id' => 'req-timeout',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.job.status', ButtonActionJob::STATUS_QUEUED)
+            ->assertJsonPath('data.job.function.code', $function->code)
+            ->json('data.job.public_id');
+
+        $this->travel(70)->seconds();
+
+        $this->actingAs($owner)
+            ->getJson('/api/button-actions/current')
+            ->assertOk()
+            ->assertJsonPath('data.job.public_id', $jobPublicId)
+            ->assertJsonPath('data.job.status', ButtonActionJob::STATUS_QUEUED);
+
+        $longToken = $this->postJson('/api/device-auth/long-token', [
+            'serial_number' => $device->serial_number,
+            'secret' => 'runner-secret',
+        ])
+            ->assertOk()
+            ->json('data.long_token');
+
+        $accessToken = $this->withToken($longToken)
+            ->postJson("/api/devices/{$device->serial_number}/access-tokens")
+            ->assertOk()
+            ->json('data.access_token');
+
+        $this->withToken($accessToken)
+            ->postJson("/api/devices/{$device->serial_number}/poll", [
+                'status' => 'idle',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.job_id', $jobPublicId);
+
+        $this->withToken($accessToken)
+            ->postJson("/api/device-jobs/{$jobPublicId}/complete", [
+                'status' => 'succeeded',
+                'result' => ['ok' => true],
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.job.status', ButtonActionJob::STATUS_SUCCEEDED);
+
+        $this->travelBack();
+    }
+
     /**
      * @return array{Device, ProductFunction}
      */

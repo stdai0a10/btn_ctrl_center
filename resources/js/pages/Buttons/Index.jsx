@@ -5,6 +5,17 @@ import AppLayout from '../../layouts/AppLayout';
 import { errorMessage } from '../../lib/http';
 
 const iconMap = { power: Power, square: Square, circle: Circle };
+const runningStatuses = ['queued', 'running'];
+const jobStatusLabels = {
+    queued: '等待設備取得任務',
+    running: '設備執行中',
+    succeeded: '執行成功',
+    failed: '執行失敗',
+    device_offline: '設備已離線',
+    timed_out: '任務已逾時',
+    unauthorized: '無權限',
+    canceled: '已取消',
+};
 const emptyButton = {
     device_serial_number: '',
     product_function_code: '',
@@ -26,6 +37,8 @@ export default function ButtonsIndex() {
     const [newPageName, setNewPageName] = useState('');
     const [newButton, setNewButton] = useState(emptyButton);
     const [job, setJob] = useState(null);
+    const [frontEndTimedOutJobId, setFrontEndTimedOutJobId] = useState(null);
+    const [infoButton, setInfoButton] = useState(null);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
@@ -33,6 +46,9 @@ export default function ButtonsIndex() {
 
     const activePage = pages.find((page) => page.public_id === activePageId) ?? pages[0] ?? null;
     const visiblePage = editing && draft ? draft : activePage;
+    const jobIsRunning = job && runningStatuses.includes(job.status);
+    const jobTimedOut = jobIsRunning && frontEndTimedOutJobId === job.public_id;
+    const actionLocked = jobIsRunning && !jobTimedOut;
 
     useEffect(() => {
         reload();
@@ -40,11 +56,32 @@ export default function ButtonsIndex() {
     }, []);
 
     useEffect(() => {
-        if (!job || !['queued', 'running'].includes(job.status)) return undefined;
+        if (!jobIsRunning) return undefined;
 
         const timer = window.setInterval(loadCurrentJob, 2000);
         return () => window.clearInterval(timer);
-    }, [job?.public_id, job?.status]);
+    }, [job?.public_id, job?.status, jobTimedOut]);
+
+    useEffect(() => {
+        if (!jobIsRunning) {
+            setFrontEndTimedOutJobId(null);
+            return undefined;
+        }
+
+        if (!job.expires_at) return undefined;
+
+        const expiresAt = Date.parse(job.expires_at);
+        if (!Number.isFinite(expiresAt)) return undefined;
+
+        if (Date.now() >= expiresAt) {
+            setFrontEndTimedOutJobId(job.public_id);
+            return undefined;
+        }
+
+        setFrontEndTimedOutJobId(null);
+        const timer = window.setTimeout(() => setFrontEndTimedOutJobId(job.public_id), expiresAt - Date.now());
+        return () => window.clearTimeout(timer);
+    }, [job?.public_id, job?.status, job?.expires_at]);
 
     async function reload() {
         setLoading(true);
@@ -211,6 +248,11 @@ export default function ButtonsIndex() {
     }
 
     async function trigger(button) {
+        if (actionLocked) {
+            setError('任務執行中，請等待完成或逾時後再操作其他按鈕。');
+            return;
+        }
+
         const requestId = window.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
         const response = await run(
             () => window.axios.post('/api/button-actions', {
@@ -252,7 +294,8 @@ export default function ButtonsIndex() {
 
                 {message && <div className="notice success">{message}</div>}
                 {error && <div className="notice error">{error}</div>}
-                {job && <JobPanel job={job} onClose={() => setJob(null)} />}
+                {job && <JobPanel job={job} timedOut={jobTimedOut} onClose={() => setJob(null)} />}
+                {infoButton && <ButtonInfoDialog button={infoButton} onClose={() => setInfoButton(null)} />}
 
                 <section className="panel">
                     <form className="button-page-create" onSubmit={createPage}>
@@ -348,7 +391,10 @@ export default function ButtonsIndex() {
                                 <ButtonTile
                                     button={button}
                                     editing={editing}
+                                    actionLocked={actionLocked}
+                                    processing={processing}
                                     onTrigger={() => trigger(button)}
+                                    onInfo={() => setInfoButton(button)}
                                     onUpdate={(updates) => updateDraftButton(index, updates)}
                                     onRemove={() => removeDraftButton(index)}
                                     key={button.public_id ?? `${button.device.serial_number}-${button.position}-${index}`}
@@ -363,9 +409,13 @@ export default function ButtonsIndex() {
     );
 }
 
-function ButtonTile({ button, editing, onTrigger, onUpdate, onRemove }) {
+function ButtonTile({ button, editing, actionLocked, processing, onTrigger, onInfo, onUpdate, onRemove }) {
     const Icon = iconMap[button.icon_key] ?? Power;
-    const disabled = !button.availability?.available;
+    const unavailable = !button.availability?.available;
+    const disabledMessage = actionLocked
+        ? '任務執行中，請等待完成或逾時。'
+        : button.availability?.message;
+    const disabled = !editing && (unavailable || actionLocked || processing);
 
     return (
         <article className={`control-button-tile is-${button.shape}`}>
@@ -373,16 +423,21 @@ function ButtonTile({ button, editing, onTrigger, onUpdate, onRemove }) {
                 type="button"
                 className="control-button-face"
                 style={{ backgroundColor: button.background_color, color: button.foreground_color }}
-                disabled={!editing && disabled}
+                disabled={disabled}
                 onClick={() => !editing && onTrigger()}
-                title={button.availability?.message ?? button.function?.description}
+                title={disabledMessage ?? button.function?.description}
             >
                 {button.content_type === 'text' && button.label ? <span>{button.label}</span> : <Icon size={28} />}
             </button>
             <div className="control-button-meta">
                 <strong>{button.label || button.function?.description || button.icon_key}</strong>
                 <span>{button.device?.name || button.device?.serial_number}</span>
-                {disabled && <small>{button.availability?.message}</small>}
+                {disabledMessage && <small>{disabledMessage}</small>}
+                {!editing && (
+                    <button type="button" className="icon-button" title="按鈕資訊" onClick={onInfo}>
+                        <Info size={16} />
+                    </button>
+                )}
             </div>
             {editing && (
                 <div className="button-edit-fields">
@@ -396,18 +451,61 @@ function ButtonTile({ button, editing, onTrigger, onUpdate, onRemove }) {
     );
 }
 
-function JobPanel({ job, onClose }) {
-    const isRunning = ['queued', 'running'].includes(job.status);
+function JobPanel({ job, timedOut, onClose }) {
+    const isRunning = runningStatuses.includes(job.status);
+    const canClose = !isRunning || timedOut;
+    const label = timedOut ? '前端等待逾時' : jobStatusLabels[job.status] ?? job.status;
+    const panelType = timedOut ? 'error' : isRunning ? 'info' : job.status === 'succeeded' ? 'success' : 'error';
 
     return (
-        <section className={`notice ${isRunning ? 'info' : job.status === 'succeeded' ? 'success' : 'error'} job-panel`}>
+        <section className={`notice ${panelType} job-panel`}>
             <Info size={18} />
             <div>
-                <strong>任務狀態：{job.status}</strong>
+                <strong>任務狀態：{label}</strong>
                 <span>{job.progress ?? 0}% {job.progress_message ?? ''}</span>
+                {timedOut && <span>等待已解除，設備仍可稍後回報結果。</span>}
                 {job.error_message && <span>{job.error_message}</span>}
             </div>
-            {!isRunning && <button type="button" className="button-ghost" onClick={onClose}>關閉</button>}
+            {canClose && <button type="button" className="button-ghost" onClick={onClose}>關閉</button>}
         </section>
+    );
+}
+
+function ButtonInfoDialog({ button, onClose }) {
+    return (
+        <div className="app-dialog-backdrop" role="presentation" onMouseDown={onClose}>
+            <section className="app-dialog button-info-dialog" role="dialog" aria-modal="true" aria-labelledby="button-info-title" onMouseDown={(event) => event.stopPropagation()}>
+                <div className="app-dialog-heading">
+                    <h2 id="button-info-title">{button.label || button.function?.description || '按鈕資訊'}</h2>
+                    <button type="button" className="app-dialog-close" onClick={onClose} aria-label="關閉"><X size={18} /></button>
+                </div>
+                <dl className="button-info-list">
+                    <div>
+                        <dt>設備</dt>
+                        <dd>{button.device?.name || button.device?.serial_number}</dd>
+                    </div>
+                    <div>
+                        <dt>序號</dt>
+                        <dd>{button.device?.serial_number}</dd>
+                    </div>
+                    <div>
+                        <dt>房間</dt>
+                        <dd>{button.device?.room?.name ?? '無'}</dd>
+                    </div>
+                    <div>
+                        <dt>產品</dt>
+                        <dd>{button.device?.product?.name ?? button.device?.product?.model_number ?? '無'}</dd>
+                    </div>
+                    <div>
+                        <dt>功能</dt>
+                        <dd>{button.function?.description} ({button.function?.code})</dd>
+                    </div>
+                    <div>
+                        <dt>狀態</dt>
+                        <dd>{button.availability?.available ? '可操作' : button.availability?.message}</dd>
+                    </div>
+                </dl>
+            </section>
+        </div>
     );
 }
