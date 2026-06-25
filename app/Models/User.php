@@ -132,4 +132,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(RoomJoinRequest::class, 'requester_user_id');
     }
+
+    public function buttonPages(): HasMany
+    {
+        return $this->hasMany(ButtonPage::class);
+    }
+
+    public function buttonActionJobs(): HasMany
+    {
+        return $this->hasMany(ButtonActionJob::class);
+    }
 }
