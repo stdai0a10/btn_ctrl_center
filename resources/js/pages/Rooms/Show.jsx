@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { EllipsisVertical, Lock, LockOpen, Pencil, Power, Trash2 } from 'lucide-react';
+import { EllipsisVertical, Info, Lock, LockOpen, Pencil, Power, Trash2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import AppLayout from '../../layouts/AppLayout';
@@ -25,6 +25,7 @@ export default function RoomShow({ roomPublicId }) {
     const [removeMemberError, setRemoveMemberError] = useState('');
     const [devicePendingRemoval, setDevicePendingRemoval] = useState(null);
     const [removeDeviceError, setRemoveDeviceError] = useState('');
+    const [deviceInfo, setDeviceInfo] = useState(null);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [errors, setErrors] = useState({});
@@ -209,7 +210,7 @@ export default function RoomShow({ roomPublicId }) {
     function toggleDeviceMenu(event, device) {
         const rect = event.currentTarget.getBoundingClientRect();
         const menuWidth = 184;
-        const estimatedHeight = 188;
+        const estimatedHeight = isOwner ? 236 : 54;
         const gap = 6;
         const left = Math.min(
             window.innerWidth - menuWidth - 12,
@@ -262,6 +263,11 @@ export default function RoomShow({ roomPublicId }) {
 
         if (action === 'rename') {
             startEditingDeviceName(device);
+            return;
+        }
+
+        if (action === 'info') {
+            setDeviceInfo(device);
             return;
         }
 
@@ -626,21 +632,19 @@ export default function RoomShow({ roomPublicId }) {
                                             ) : (
                                                 <div className="profile-display-row">
                                                     <strong>{device.name || device.serial_number}</strong>
-                                                    {isOwner && (
-                                                        <button
-                                                            type="button"
-                                                            className="table-action-trigger device-action-trigger"
-                                                            data-device-action-trigger={device.id}
-                                                            aria-label={`${device.name || device.serial_number} 操作`}
-                                                            aria-expanded={openDeviceMenu?.device.id === device.id}
-                                                            aria-haspopup="menu"
-                                                            title="操作"
-                                                            disabled={processing}
-                                                            onClick={(event) => toggleDeviceMenu(event, device)}
-                                                        >
-                                                            <EllipsisVertical size={19} strokeWidth={2.4} />
-                                                        </button>
-                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        className="table-action-trigger device-action-trigger"
+                                                        data-device-action-trigger={device.id}
+                                                        aria-label={`${device.name || device.serial_number} 操作`}
+                                                        aria-expanded={openDeviceMenu?.device.id === device.id}
+                                                        aria-haspopup="menu"
+                                                        title="操作"
+                                                        disabled={processing}
+                                                        onClick={(event) => toggleDeviceMenu(event, device)}
+                                                    >
+                                                        <EllipsisVertical size={19} strokeWidth={2.4} />
+                                                    </button>
                                                 </div>
                                             )}
                                             <span>{device.serial_number} · {device.is_locked ? '已上鎖' : '未上鎖'} · {device.is_enabled ? '已啟用' : '已停用'}</span>
@@ -659,28 +663,36 @@ export default function RoomShow({ roomPublicId }) {
                                         top: openDeviceMenu.position.top,
                                     }}
                                 >
-                                    <button type="button" role="menuitem" onClick={() => selectDeviceAction(openDeviceMenu.device, 'rename')}>
-                                        <Pencil size={17} />
-                                        改名
+                                    <button type="button" role="menuitem" onClick={() => selectDeviceAction(openDeviceMenu.device, 'info')}>
+                                        <Info size={17} />
+                                        設備資訊
                                     </button>
-                                    <button type="button" role="menuitem" onClick={() => selectDeviceAction(openDeviceMenu.device, 'toggle-enabled')}>
-                                        <Power size={17} />
-                                        {openDeviceMenu.device.is_enabled ? '停用' : '啟用'}
-                                    </button>
-                                    <button type="button" role="menuitem" onClick={() => selectDeviceAction(openDeviceMenu.device, 'toggle-locked')}>
-                                        {openDeviceMenu.device.is_locked ? <LockOpen size={17} /> : <Lock size={17} />}
-                                        {openDeviceMenu.device.is_locked ? '解鎖' : '上鎖'}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        role="menuitem"
-                                        className="is-danger"
-                                        disabled={openDeviceMenu.device.is_locked}
-                                        onClick={() => selectDeviceAction(openDeviceMenu.device, 'remove')}
-                                    >
-                                        <Trash2 size={17} />
-                                        移除
-                                    </button>
+                                    {isOwner && (
+                                        <>
+                                            <button type="button" role="menuitem" onClick={() => selectDeviceAction(openDeviceMenu.device, 'rename')}>
+                                                <Pencil size={17} />
+                                                改名
+                                            </button>
+                                            <button type="button" role="menuitem" onClick={() => selectDeviceAction(openDeviceMenu.device, 'toggle-enabled')}>
+                                                <Power size={17} />
+                                                {openDeviceMenu.device.is_enabled ? '停用' : '啟用'}
+                                            </button>
+                                            <button type="button" role="menuitem" onClick={() => selectDeviceAction(openDeviceMenu.device, 'toggle-locked')}>
+                                                {openDeviceMenu.device.is_locked ? <LockOpen size={17} /> : <Lock size={17} />}
+                                                {openDeviceMenu.device.is_locked ? '解鎖' : '上鎖'}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                role="menuitem"
+                                                className="is-danger"
+                                                disabled={openDeviceMenu.device.is_locked}
+                                                onClick={() => selectDeviceAction(openDeviceMenu.device, 'remove')}
+                                            >
+                                                <Trash2 size={17} />
+                                                移除
+                                            </button>
+                                        </>
+                                    )}
                                 </div>,
                                 document.body,
                             )}
@@ -778,6 +790,23 @@ export default function RoomShow({ roomPublicId }) {
                             </Dialog>
                         )}
 
+                        {deviceInfo && (
+                            <Dialog title="設備資訊" onClose={() => setDeviceInfo(null)}>
+                                <dl className="detail-list">
+                                    <Detail label="設備名稱" value={deviceInfo.name || '-'} />
+                                    <Detail label="設備序號" value={deviceInfo.serial_number} />
+                                    <Detail label="產品" value={deviceInfo.product ? `${deviceInfo.product.model_number} · ${deviceInfo.product.name}` : '未指定產品'} />
+                                    <Detail label="鎖定狀態" value={deviceInfo.is_locked ? '已上鎖' : '未上鎖'} />
+                                    <Detail label="啟用狀態" value={deviceInfo.is_enabled ? '已啟用' : '已停用'} />
+                                    <Detail label="加入時間" value={formatDate(deviceInfo.created_at)} />
+                                    <Detail label="最近更新" value={formatDate(deviceInfo.updated_at)} />
+                                </dl>
+                                <div className="dialog-actions">
+                                    <button type="button" onClick={() => setDeviceInfo(null)}>關閉</button>
+                                </div>
+                            </Dialog>
+                        )}
+
                         {memberPendingRemoval && (
                             <Dialog
                                 title="確認移除成員"
@@ -811,6 +840,15 @@ export default function RoomShow({ roomPublicId }) {
             </AppLayout>
         </>
     );
+}
+
+function Detail({ label, value }) {
+    return <div><dt>{label}</dt><dd>{value}</dd></div>;
+}
+
+function formatDate(value) {
+    if (!value) return '-';
+    return new Intl.DateTimeFormat('zh-TW', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
 
 function Dialog({ title, children, onClose, closeDisabled = false }) {
