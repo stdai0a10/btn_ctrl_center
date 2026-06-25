@@ -19,7 +19,7 @@ class DeviceRuntimeService
             $before = $this->runtimeSnapshot($device);
             $now = now();
 
-            $this->revokeTokenRecords($device, $now);
+            $this->revokeTokenRecords($device, now('UTC'));
 
             $device->forceFill([
                 'runner_disabled_at' => $device->runner_disabled_at ?? $now,
@@ -82,7 +82,7 @@ class DeviceRuntimeService
             $before = $this->runtimeSnapshot($device);
             $now = now();
 
-            $this->revokeTokenRecords($device, $now);
+            $this->revokeTokenRecords($device, now('UTC'));
 
             $device->forceFill([
                 'long_token_revoked_at' => $device->long_token_revoked_at ?? $now,

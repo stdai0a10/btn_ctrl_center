@@ -14,10 +14,10 @@ return new class extends Migration
             $table->foreignId('device_id')->constrained('devices')->cascadeOnDelete();
             $table->string('type');
             $table->unsignedInteger('token_version');
-            $table->timestamp('issued_at');
-            $table->timestamp('expires_at');
-            $table->timestamp('revoked_at')->nullable();
-            $table->timestamp('last_used_at')->nullable();
+            $table->dateTime('issued_at');
+            $table->dateTime('expires_at');
+            $table->dateTime('revoked_at')->nullable();
+            $table->dateTime('last_used_at')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();
 

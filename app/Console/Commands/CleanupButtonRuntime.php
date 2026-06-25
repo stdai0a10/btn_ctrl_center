@@ -18,12 +18,13 @@ class CleanupButtonRuntime extends Command
     public function handle(): int
     {
         $now = now();
+        $utcNow = now('UTC');
 
         $expiredAccessTokens = DeviceJwtToken::query()
             ->where('type', DeviceJwtToken::TYPE_ACCESS)
             ->whereNull('revoked_at')
-            ->where('expires_at', '<=', $now)
-            ->update(['revoked_at' => $now]);
+            ->where('expires_at', '<=', $utcNow)
+            ->update(['revoked_at' => $utcNow]);
 
         $clearedDeviceAccess = Device::query()
             ->whereNotNull('current_access_jti')

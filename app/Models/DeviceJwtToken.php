@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class DeviceJwtToken extends Model
 {
@@ -27,16 +29,44 @@ class DeviceJwtToken extends Model
     {
         return [
             'token_version' => 'integer',
-            'issued_at' => 'datetime',
-            'expires_at' => 'datetime',
-            'revoked_at' => 'datetime',
-            'last_used_at' => 'datetime',
             'metadata' => 'array',
         ];
+    }
+
+    protected function issuedAt(): Attribute
+    {
+        return $this->utcDateTimeAttribute();
+    }
+
+    protected function expiresAt(): Attribute
+    {
+        return $this->utcDateTimeAttribute();
+    }
+
+    protected function revokedAt(): Attribute
+    {
+        return $this->utcDateTimeAttribute();
+    }
+
+    protected function lastUsedAt(): Attribute
+    {
+        return $this->utcDateTimeAttribute();
     }
 
     public function device(): BelongsTo
     {
         return $this->belongsTo(Device::class);
+    }
+
+    private function utcDateTimeAttribute(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value): ?Carbon => $value === null
+                ? null
+                : Carbon::parse($value, 'UTC')->timezone(config('app.timezone')),
+            set: fn ($value): ?string => $value === null
+                ? null
+                : Carbon::parse($value)->utc()->format('Y-m-d H:i:s'),
+        );
     }
 }

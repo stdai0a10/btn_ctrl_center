@@ -45,7 +45,7 @@ class DeviceTokenService
                 throw new ApiException('Device runtime is disabled.', 'DEVICE_RUNTIME_DISABLED', 403);
             }
 
-            $now = now();
+            $now = now('UTC');
             $version = ((int) $device->token_version) + 1;
             $jti = (string) Str::uuid();
             $expiresAt = $now->copy()->addMinutes(self::LONG_TTL_MINUTES);
@@ -93,7 +93,7 @@ class DeviceTokenService
 
         return DB::transaction(function () use ($device): array {
             $device = Device::query()->lockForUpdate()->findOrFail($device->id);
-            $now = now();
+            $now = now('UTC');
             $jti = (string) Str::uuid();
             $expiresAt = $now->copy()->addMinutes(self::ACCESS_TTL_MINUTES);
             $token = $this->makeToken(
@@ -177,7 +177,7 @@ class DeviceTokenService
             || (int) $payload->get('token_version') !== (int) $device->token_version
             || $record === null
             || $record->revoked_at !== null
-            || $record->expires_at->lessThanOrEqualTo(now())
+            || $record->expires_at->lessThanOrEqualTo(now('UTC'))
         ) {
             throw new ApiException('Device token is invalid.', $type === DeviceJwtToken::TYPE_LONG ? 'DEVICE_LONG_TOKEN_INVALID' : 'DEVICE_ACCESS_TOKEN_INVALID', 401);
         }
@@ -186,7 +186,7 @@ class DeviceTokenService
             throw new ApiException('Device token is invalid.', 'DEVICE_ACCESS_TOKEN_INVALID', 401);
         }
 
-        $record->forceFill(['last_used_at' => now()])->save();
+        $record->forceFill(['last_used_at' => now('UTC')])->save();
         $device->forceFill(['runner_last_seen_at' => now()])->save();
 
         return $device->refresh();
@@ -194,7 +194,7 @@ class DeviceTokenService
 
     private function makeToken(Device $device, string $type, array $scopes, string $jti, int $version, \DateTimeInterface $expiresAt): string
     {
-        $now = now();
+        $now = now('UTC');
         $payload = JWTFactory::customClaims([
             'iss' => config('app.url'),
             'iat' => $now->timestamp,
@@ -216,6 +216,6 @@ class DeviceTokenService
         DeviceJwtToken::query()
             ->where('device_id', $device->id)
             ->whereNull('revoked_at')
-            ->update(['revoked_at' => now()]);
+            ->update(['revoked_at' => now('UTC')]);
     }
 }
