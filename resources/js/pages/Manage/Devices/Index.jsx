@@ -60,7 +60,7 @@ export default function ManageDevicesIndex() {
 
                 <section className="panel">
                     <form className="manage-audit-filters" onSubmit={(event) => { event.preventDefault(); loadDevices(1); }}>
-                        <label>搜尋 <input value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} placeholder="序號、設備名稱或房間" /></label>
+                        <label>搜尋 <input value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} placeholder="序號、設備名稱、產品或房間" /></label>
                         <label>房間公開 ID <input value={filters.room_public_id} onChange={(event) => setFilters({ ...filters, room_public_id: event.target.value })} /></label>
                         <label>
                             加入狀態
@@ -90,7 +90,7 @@ export default function ManageDevicesIndex() {
                             <table className="data-table">
                                 <thead>
                                     <tr>
-                                        <th>設備序號</th><th>房間狀態</th><th>所在房間</th><th>設備名稱</th>
+                                        <th>設備序號</th><th>產品</th><th>房間狀態</th><th>所在房間</th><th>設備名稱</th>
                                         <th>鎖定</th><th>啟用</th><th>建立時間</th><th>更新時間</th>
                                     </tr>
                                 </thead>
@@ -98,6 +98,7 @@ export default function ManageDevicesIndex() {
                                     {devices.map((device) => (
                                         <tr key={device.serial_number} onClick={() => router.visit(`/manage/devices/${encodeURIComponent(device.serial_number)}`)}>
                                             <td className="account-code">{device.serial_number}</td>
+                                            <td>{device.product ? `${device.product.model_number} · ${device.product.name}` : '未指定產品'}</td>
                                             <td>{device.assignment_status === 'assigned' ? '已加入' : '未加入'}</td>
                                             <td>{device.room ? `${device.room.name} (${device.room.public_id})` : '-'}</td>
                                             <td>{device.name ?? '-'}</td>

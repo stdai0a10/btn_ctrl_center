@@ -17,12 +17,14 @@ class DeviceController extends ApiController
     public function store(Request $request, DeviceCatalogService $catalog)
     {
         $validated = $request->validate([
+            'product_public_id' => ['required', 'string', 'max:20'],
             'serial_number' => ['required', 'string', 'max:100'],
             'secret' => ['required', 'string', 'max:255', 'confirmed'],
         ]);
 
         $device = $catalog->create(
             $request,
+            $validated['product_public_id'],
             $validated['serial_number'],
             $validated['secret'],
         );
@@ -43,12 +45,15 @@ class DeviceController extends ApiController
         ]);
 
         $devices = Device::query()
-            ->with('currentRoom')
+            ->with(['currentRoom', 'product'])
             ->when($validated['search'] ?? null, function (Builder $query, string $search): void {
                 $normalized = DeviceSerial::normalize($search);
                 $query->where(function (Builder $query) use ($search, $normalized): void {
                     $query->where('serial_number', 'like', "%{$normalized}%")
                         ->orWhere('name', 'like', "%{$search}%")
+                        ->orWhereHas('product', fn (Builder $query) => $query
+                            ->where('model_number', 'like', "%{$normalized}%")
+                            ->orWhere('name', 'like', "%{$search}%"))
                         ->orWhereHas('currentRoom', fn (Builder $query) => $query
                             ->where('public_id', 'like', "%{$normalized}%")
                             ->orWhere('name', 'like', "%{$search}%"));
@@ -74,7 +79,7 @@ class DeviceController extends ApiController
     public function show(Request $request, string $serialNumber)
     {
         $device = Device::query()
-            ->with('currentRoom')
+            ->with(['currentRoom', 'product.functions'])
             ->where('serial_number', DeviceSerial::normalize($serialNumber))
             ->firstOrFail();
 
@@ -110,6 +115,7 @@ class DeviceController extends ApiController
             ->firstOrFail();
 
         $devices = $room->devices()
+            ->with('product')
             ->latest('created_at')
             ->paginate($validated['per_page'] ?? 20, ['*'], 'page', $validated['page'] ?? 1);
 
@@ -127,10 +133,21 @@ class DeviceController extends ApiController
 
     private function devicePayload(Device $device): array
     {
-        $device->loadMissing('currentRoom');
+        $device->loadMissing(['currentRoom', 'product']);
 
         return [
             'serial_number' => $device->serial_number,
+            'product' => $device->product === null ? null : [
+                'public_id' => $device->product->public_id,
+                'model_number' => $device->product->model_number,
+                'name' => $device->product->name,
+                'functions' => $device->relationLoaded('product') && $device->product->relationLoaded('functions')
+                    ? $device->product->functions->map(fn ($function): array => [
+                        'code' => $function->code,
+                        'description' => $function->description,
+                    ])->values()->all()
+                    : null,
+            ],
             'name' => $device->name,
             'is_locked' => $device->is_locked,
             'is_enabled' => $device->is_enabled,

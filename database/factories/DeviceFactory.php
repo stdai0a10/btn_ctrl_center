@@ -15,6 +15,7 @@ class DeviceFactory extends Factory
     public function definition(): array
     {
         return [
+            'product_id' => null,
             'serial_number' => 'DEV-'.Str::upper(Str::random(10)),
             'secret_hash' => Hash::make('device-secret'),
             'current_room_id' => null,

@@ -658,6 +658,19 @@ button:disabled {
     min-width: 0;
 }
 
+.product-function-create-form {
+    align-items: end;
+    margin-top: 1rem;
+}
+
+.product-function-create-form label {
+    flex: 1 1 22rem;
+}
+
+.product-function-create-form button {
+    min-height: 3.05rem;
+}
+
 .button-ghost {
     border: 1px solid var(--line);
     background: #fffdf7;
@@ -781,6 +794,31 @@ button:disabled {
     justify-content: flex-end;
     gap: 0.65rem;
     margin-top: 1.25rem;
+}
+
+.suggestion-list {
+    display: grid;
+    gap: 0.35rem;
+    border: 1px solid var(--soft-line);
+    border-radius: 8px;
+    padding: 0.35rem;
+    background: #ffffff;
+}
+
+.suggestion-item {
+    display: grid;
+    justify-items: start;
+    gap: 0.2rem;
+    width: 100%;
+    border-radius: 6px;
+    padding: 0.7rem 0.8rem;
+    background: #fffdf7;
+    color: var(--ink);
+    text-align: left;
+}
+
+.suggestion-item:hover {
+    background: #edf5f3;
 }
 
 .table-action-menu-list {

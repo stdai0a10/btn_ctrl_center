@@ -1,15 +1,72 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ManageLayout from '../../../layouts/ManageLayout';
 import { formErrors } from '../../../lib/http';
 
 export default function ManageDeviceCreate() {
-    const [form, setForm] = useState({ serial_number: '', secret: '', secret_confirmation: '' });
+    const [form, setForm] = useState({ product_public_id: '', serial_number: '', secret: '', secret_confirmation: '' });
+    const [productQuery, setProductQuery] = useState('');
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [suggestions, setSuggestions] = useState([]);
+    const [suggestionLoading, setSuggestionLoading] = useState(false);
+    const [suggestionTouched, setSuggestionTouched] = useState(false);
     const [errors, setErrors] = useState({});
     const [processing, setProcessing] = useState(false);
 
+    useEffect(() => {
+        if (productQuery.trim() === '' || selectedProduct?.model_number === productQuery) {
+            setSuggestions([]);
+            setSuggestionLoading(false);
+            return undefined;
+        }
+
+        const timer = window.setTimeout(async () => {
+            setSuggestionLoading(true);
+            try {
+                const response = await window.axios.get('/manage/api/products', {
+                    params: {
+                        suggest: true,
+                        search: productQuery,
+                        per_page: 10,
+                    },
+                });
+                setSuggestions(response.data.data.items ?? []);
+            } catch {
+                setSuggestions([]);
+            } finally {
+                setSuggestionLoading(false);
+            }
+        }, 300);
+
+        return () => window.clearTimeout(timer);
+    }, [productQuery, selectedProduct]);
+
+    function changeProductQuery(value) {
+        setProductQuery(value);
+        setSuggestionTouched(true);
+
+        if (selectedProduct && value !== selectedProduct.model_number) {
+            setSelectedProduct(null);
+            setForm((current) => ({ ...current, product_public_id: '' }));
+        }
+    }
+
+    function chooseProduct(product) {
+        setSelectedProduct(product);
+        setProductQuery(product.model_number);
+        setForm((current) => ({ ...current, product_public_id: product.public_id }));
+        setSuggestions([]);
+        setSuggestionTouched(false);
+        setErrors((current) => ({ ...current, product_public_id: undefined }));
+    }
+
     async function submit(event) {
         event.preventDefault();
+        if (!form.product_public_id) {
+            setErrors({ product_public_id: ['請從建議清單選擇產品。'] });
+            return;
+        }
+
         setProcessing(true);
         setErrors({});
 
@@ -35,6 +92,38 @@ export default function ManageDeviceCreate() {
                 <section className="panel manage-form-panel">
                     {errors.form?.map((error) => <div className="notice error" key={error}>{error}</div>)}
                     <form className="stack" onSubmit={submit}>
+                        <label>
+                            產品型號
+                            <input
+                                value={productQuery}
+                                onChange={(event) => changeProductQuery(event.target.value)}
+                                placeholder="輸入產品型號，例如 BTN-001"
+                                maxLength={100}
+                                autoComplete="off"
+                                required
+                            />
+                            {selectedProduct && <small>已選擇：{selectedProduct.model_number} · {selectedProduct.name}</small>}
+                            {suggestionLoading && <small>查詢產品中...</small>}
+                            {!suggestionLoading && suggestionTouched && productQuery.trim() !== '' && suggestions.length === 0 && !selectedProduct && (
+                                <small className="field-error">找不到相近產品</small>
+                            )}
+                            {suggestions.length > 0 && (
+                                <div className="suggestion-list" role="listbox">
+                                    {suggestions.map((product) => (
+                                        <button
+                                            type="button"
+                                            className="suggestion-item"
+                                            key={product.public_id}
+                                            onClick={() => chooseProduct(product)}
+                                        >
+                                            <span className="account-code">{product.model_number}</span>
+                                            <small>{product.name}</small>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            {errors.product_public_id?.map((error) => <small className="field-error" key={error}>{error}</small>)}
+                        </label>
                         <label>
                             設備序號
                             <input value={form.serial_number} onChange={(event) => setForm({ ...form, serial_number: event.target.value })} maxLength={100} required />

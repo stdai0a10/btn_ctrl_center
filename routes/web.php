@@ -4,6 +4,7 @@ use App\Http\Controllers\Manage\AuditController as ManageAuditController;
 use App\Http\Controllers\Manage\AuthController as ManageAuthController;
 use App\Http\Controllers\Manage\DashboardController as ManageDashboardController;
 use App\Http\Controllers\Manage\DeviceController as ManageDeviceController;
+use App\Http\Controllers\Manage\ProductController as ManageProductController;
 use App\Http\Controllers\Manage\RoomController as ManageRoomController;
 use App\Http\Controllers\Manage\ServiceManagerController as ManageServiceManagerController;
 use App\Http\Controllers\Manage\UserController as ManageUserController;
@@ -68,6 +69,17 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
         ]))
             ->middleware('permission:manage.devices.detail')
             ->name('devices.show');
+        Route::get('/products', fn () => Inertia::render('Manage/Products/Index'))
+            ->middleware('permission:manage.products.view')
+            ->name('products.index');
+        Route::get('/products/create', fn () => Inertia::render('Manage/Products/Create'))
+            ->middleware('permission:manage.products.create')
+            ->name('products.create');
+        Route::get('/products/{product_public_id}', fn (string $productPublicId) => Inertia::render('Manage/Products/Show', [
+            'productPublicId' => $productPublicId,
+        ]))
+            ->middleware('permission:manage.products.detail')
+            ->name('products.show');
         Route::get('/service-managers', fn () => Inertia::render('Manage/ServiceManagers/Index'))
             ->middleware('permission:manage.service_managers.view')
             ->name('service-managers.index');
@@ -128,6 +140,30 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
             Route::get('/devices/{serial_number}', [ManageDeviceController::class, 'show'])
                 ->middleware('permission:manage.devices.detail')
                 ->name('devices.show');
+            Route::get('/products', [ManageProductController::class, 'index'])
+                ->middleware('permission:manage.products.view')
+                ->name('products.index');
+            Route::post('/products', [ManageProductController::class, 'store'])
+                ->middleware('permission:manage.products.create')
+                ->name('products.store');
+            Route::get('/products/{product_public_id}', [ManageProductController::class, 'show'])
+                ->middleware('permission:manage.products.detail')
+                ->name('products.show');
+            Route::patch('/products/{product_public_id}', [ManageProductController::class, 'update'])
+                ->middleware('permission:manage.products.update')
+                ->name('products.update');
+            Route::post('/products/{product_public_id}/lock', [ManageProductController::class, 'lock'])
+                ->middleware('permission:manage.products.lock')
+                ->name('products.lock');
+            Route::post('/products/{product_public_id}/functions', [ManageProductController::class, 'storeFunction'])
+                ->middleware('permission:manage.product_functions.create')
+                ->name('products.functions.store');
+            Route::patch('/product-functions/{code}', [ManageProductController::class, 'updateFunction'])
+                ->middleware('permission:manage.product_functions.update')
+                ->name('product-functions.update');
+            Route::delete('/product-functions/{code}', [ManageProductController::class, 'destroyFunction'])
+                ->middleware('permission:manage.product_functions.delete')
+                ->name('product-functions.destroy');
             Route::get('/service-managers', [ManageServiceManagerController::class, 'index'])
                 ->middleware('permission:manage.service_managers.view')
                 ->name('service-managers.index');

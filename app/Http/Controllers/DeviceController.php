@@ -18,6 +18,7 @@ class DeviceController extends ApiController
         $this->authorize('view', $room);
 
         $devices = $room->devices()
+            ->with('product')
             ->latest()
             ->get()
             ->map(fn (Device $device): array => $this->payload($device));
@@ -108,9 +109,15 @@ class DeviceController extends ApiController
 
     private function payload(Device $device): array
     {
+        $device->loadMissing('product');
+
         return [
             'id' => $device->id,
             'serial_number' => $device->serial_number,
+            'product' => $device->product === null ? null : [
+                'model_number' => $device->product->model_number,
+                'name' => $device->product->name,
+            ],
             'current_room_id' => $device->current_room_id,
             'name' => $device->name,
             'is_locked' => $device->is_locked,
