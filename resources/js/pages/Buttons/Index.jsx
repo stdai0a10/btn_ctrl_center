@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, Circle, Info, Plus, Power, Save, Square, Trash2, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { ArrowDown, ArrowUp, ChevronDown, Circle, Info, Menu, Plus, Power, Save, Square, Trash2, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import AppLayout from '../../layouts/AppLayout';
 import { errorMessage } from '../../lib/http';
 
@@ -29,6 +29,7 @@ const emptyButton = {
 };
 
 export default function ButtonsIndex() {
+    const tabListRef = useRef(null);
     const [pages, setPages] = useState([]);
     const [activePageId, setActivePageId] = useState(null);
     const [targets, setTargets] = useState([]);
@@ -39,6 +40,10 @@ export default function ButtonsIndex() {
     const [job, setJob] = useState(null);
     const [frontEndTimedOutJobId, setFrontEndTimedOutJobId] = useState(null);
     const [infoButton, setInfoButton] = useState(null);
+    const [pagePickerOpen, setPagePickerOpen] = useState(false);
+    const [pageMenuOpen, setPageMenuOpen] = useState(false);
+    const [createPageOpen, setCreatePageOpen] = useState(false);
+    const [orderingPageIds, setOrderingPageIds] = useState(null);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
@@ -82,6 +87,18 @@ export default function ButtonsIndex() {
         const timer = window.setTimeout(() => setFrontEndTimedOutJobId(job.public_id), expiresAt - Date.now());
         return () => window.clearTimeout(timer);
     }, [job?.public_id, job?.status, job?.expires_at]);
+
+    useEffect(() => {
+        if (!activePageId) return undefined;
+
+        const frame = window.requestAnimationFrame(() => {
+            const activeTab = [...(tabListRef.current?.children ?? [])]
+                .find((element) => element.dataset.pageId === activePageId);
+            activeTab?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        });
+
+        return () => window.cancelAnimationFrame(frame);
+    }, [activePageId, pages.length]);
 
     async function reload() {
         setLoading(true);
@@ -135,6 +152,8 @@ export default function ButtonsIndex() {
         setNewPageName('');
         await reload();
         setActivePageId(response.data.data.public_id);
+        setCreatePageOpen(false);
+        setPageMenuOpen(false);
     }
 
     async function deletePage(page) {
@@ -157,10 +176,42 @@ export default function ButtonsIndex() {
         await reload();
     }
 
+    function startOrdering() {
+        if (pages.length === 0) return;
+        setOrderingPageIds(pages.map((page) => page.public_id));
+        setPageMenuOpen(false);
+        setPagePickerOpen(false);
+    }
+
+    function moveOrderingPage(pageId, direction) {
+        setOrderingPageIds((current) => {
+            if (!current) return current;
+
+            const index = current.indexOf(pageId);
+            const nextIndex = index + direction;
+            if (index < 0 || nextIndex < 0 || nextIndex >= current.length) return current;
+
+            const next = [...current];
+            [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+            return next;
+        });
+    }
+
+    async function savePageOrder() {
+        if (!orderingPageIds) return;
+
+        await run(() => window.axios.put('/api/button-pages/order', { button_page_public_ids: orderingPageIds }), '按鈕分頁順序已更新。');
+        setOrderingPageIds(null);
+        await reload();
+    }
+
     function startEditing() {
         if (!activePage) return;
         setDraft(JSON.parse(JSON.stringify(activePage)));
         setEditing(true);
+        setPageMenuOpen(false);
+        setPagePickerOpen(false);
+        setCreatePageOpen(false);
         setMessage('');
         setError('');
     }
@@ -269,121 +320,191 @@ export default function ButtonsIndex() {
         return target?.functions ?? [];
     }, [targets, newButton.device_serial_number]);
 
+    const orderedPages = orderingPageIds
+        ? orderingPageIds.map((id) => pages.find((page) => page.public_id === id)).filter(Boolean)
+        : [];
+    const visibleTabCount = Math.min(Math.max(pages.length, 1), 4);
+
     return (
         <>
             <Head title="按鈕" />
             <AppLayout contentClassName="buttons-main">
-                <section className="page-header">
-                    <div>
-                        <p className="eyebrow">Buttons</p>
-                        <h1>按鈕</h1>
-                    </div>
-                    {activePage && !editing && (
-                        <div className="actions-row">
-                            <button type="button" onClick={startEditing}>編輯</button>
-                            <button type="button" className="button-danger" onClick={() => deletePage(activePage)}>刪除分頁</button>
-                        </div>
-                    )}
-                    {editing && (
-                        <div className="actions-row">
-                            <button type="button" onClick={saveDraft} disabled={processing}><Save size={17} />儲存</button>
-                            <button type="button" className="button-ghost" onClick={cancelEditing}><X size={17} />取消</button>
-                        </div>
-                    )}
-                </section>
-
                 {message && <div className="notice success">{message}</div>}
                 {error && <div className="notice error">{error}</div>}
                 {job && <JobPanel job={job} timedOut={jobTimedOut} onClose={() => setJob(null)} />}
                 {infoButton && <ButtonInfoDialog button={infoButton} onClose={() => setInfoButton(null)} />}
-
-                <section className="panel">
-                    <form className="button-page-create" onSubmit={createPage}>
-                        <input
-                            value={newPageName}
-                            onChange={(event) => setNewPageName(event.target.value)}
-                            maxLength={100}
-                            placeholder="新增分頁名稱"
-                            required
-                        />
-                        <button type="submit" disabled={processing || pages.length >= 50}><Plus size={17} />新增分頁</button>
-                    </form>
-                    {pages.length > 0 && (
-                        <div className="button-page-tabs">
-                            {pages.map((page) => (
-                                <button
-                                    type="button"
-                                    className={`section-tab ${activePage?.public_id === page.public_id ? 'is-active' : ''}`}
-                                    onClick={() => {
-                                        if (!editing) setActivePageId(page.public_id);
-                                    }}
-                                    key={page.public_id}
-                                >
-                                    {page.name}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                    {activePage && !editing && (
-                        <div className="compact-actions">
-                            <button type="button" className="button-ghost" onClick={() => movePage(activePage, -1)}><ArrowUp size={16} />上移</button>
-                            <button type="button" className="button-ghost" onClick={() => movePage(activePage, 1)}><ArrowDown size={16} />下移</button>
-                        </div>
-                    )}
-                </section>
 
                 {loading && <p className="muted">載入中...</p>}
                 {!loading && pages.length === 0 && (
                     <section className="panel empty-buttons-panel">
                         <h2>目前沒有分頁</h2>
                         <p className="muted">輸入分頁名稱後新增第一個按鈕分頁。</p>
+                        <form className="button-page-create" onSubmit={createPage}>
+                            <input
+                                value={newPageName}
+                                onChange={(event) => setNewPageName(event.target.value)}
+                                maxLength={100}
+                                placeholder="新增分頁名稱"
+                                required
+                            />
+                            <button type="submit" disabled={processing || pages.length >= 50}><Plus size={17} />新增分頁</button>
+                        </form>
                     </section>
                 )}
 
                 {visiblePage && (
-                    <section className="panel">
-                        {editing ? (
-                            <div className="button-edit-toolbar">
-                                <label>
-                                    分頁名稱
-                                    <input value={draft.name} maxLength={100} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
-                                </label>
-                                <label>
-                                    欄數
-                                    <select value={draft.layout_columns} onChange={(event) => changeColumns(Number(event.target.value))}>
-                                        {[2, 3, 4, 5].map((columns) => <option value={columns} key={columns}>{columns} 欄</option>)}
-                                    </select>
-                                </label>
+                    <section className="button-page-shell">
+                        <div className="button-page-controlbar">
+                            <div className="button-page-picker-wrap">
+                                <button
+                                    type="button"
+                                    className="button-page-icon-control"
+                                    aria-label="選擇分頁"
+                                    aria-expanded={pagePickerOpen}
+                                    disabled={editing}
+                                    onClick={() => {
+                                        setPagePickerOpen((open) => !open);
+                                        setPageMenuOpen(false);
+                                        setCreatePageOpen(false);
+                                    }}
+                                >
+                                    <ChevronDown size={22} />
+                                </button>
+                                {pagePickerOpen && (
+                                    <div className="button-page-popover button-page-picker" role="menu">
+                                        {pages.map((page) => (
+                                            <button
+                                                type="button"
+                                                role="menuitem"
+                                                className={activePage?.public_id === page.public_id ? 'is-active' : ''}
+                                                onClick={() => {
+                                                    setActivePageId(page.public_id);
+                                                    setPagePickerOpen(false);
+                                                }}
+                                                key={page.public_id}
+                                            >
+                                                {page.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        ) : (
-                            <div className="panel-heading">
-                                <h2>{activePage.name}</h2>
-                                <span className="status-pill">{activePage.buttons.length} 個按鈕</span>
+
+                            <div className="button-page-control-actions">
+                                <div className="button-page-picker-wrap">
+                                    <button
+                                        type="button"
+                                        className="button-page-icon-control"
+                                        aria-label="分頁選單"
+                                        aria-expanded={pageMenuOpen}
+                                        disabled={editing}
+                                        onClick={() => {
+                                            setPageMenuOpen((open) => !open);
+                                            setPagePickerOpen(false);
+                                            setCreatePageOpen(false);
+                                        }}
+                                    >
+                                        <Menu size={25} />
+                                    </button>
+                                    {pageMenuOpen && (
+                                        <div className="button-page-popover button-page-menu" role="menu">
+                                            <button
+                                                type="button"
+                                                role="menuitem"
+                                                onClick={() => {
+                                                    setCreatePageOpen(true);
+                                                    setPageMenuOpen(false);
+                                                }}
+                                            >
+                                                新增分頁
+                                            </button>
+                                            <button type="button" role="menuitem" disabled={pages.length < 2} onClick={startOrdering}>排序分頁</button>
+                                            <button type="button" role="menuitem" disabled={!activePage} onClick={startEditing}>編輯分頁</button>
+                                            <button type="button" role="menuitem" className="is-danger" disabled={!activePage} onClick={() => deletePage(activePage)}>刪除分頁</button>
+                                        </div>
+                                    )}
+                                    {createPageOpen && (
+                                        <form className="button-page-popover button-page-create-popover" onSubmit={createPage}>
+                                            <input
+                                                value={newPageName}
+                                                onChange={(event) => setNewPageName(event.target.value)}
+                                                maxLength={100}
+                                                placeholder="新增分頁名稱"
+                                                required
+                                            />
+                                            <button type="submit" disabled={processing || pages.length >= 50}><Plus size={17} />新增</button>
+                                        </form>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {pages.length > 0 && (
+                            <div
+                                className="button-page-tabs"
+                                role="tablist"
+                                aria-label="按鈕分頁"
+                                ref={tabListRef}
+                                style={{ '--button-visible-tabs': visibleTabCount }}
+                            >
+                                {pages.map((page) => (
+                                    <button
+                                        type="button"
+                                        role="tab"
+                                        data-page-id={page.public_id}
+                                        aria-selected={activePage?.public_id === page.public_id}
+                                        className={activePage?.public_id === page.public_id ? 'is-active' : ''}
+                                        onClick={() => {
+                                            if (!editing) setActivePageId(page.public_id);
+                                        }}
+                                        key={page.public_id}
+                                    >
+                                        {page.name}
+                                    </button>
+                                ))}
                             </div>
                         )}
 
                         {editing && (
-                            <form className="button-builder" onSubmit={addButton}>
-                                <select value={newButton.device_serial_number} onChange={(event) => setNewButton({ ...newButton, device_serial_number: event.target.value, product_function_code: '' })} required>
-                                    <option value="">選擇設備</option>
-                                    {targets.map((target) => (
-                                        <option value={target.device.serial_number} key={target.device.serial_number}>
-                                            {target.device.name || target.device.serial_number} · {target.device.product?.model_number}
-                                        </option>
-                                    ))}
-                                </select>
-                                <select value={newButton.product_function_code} onChange={(event) => setNewButton({ ...newButton, product_function_code: event.target.value })} required>
-                                    <option value="">選擇功能</option>
-                                    {groupedFunctions.map((item) => <option value={item.code} key={item.code}>{item.description}</option>)}
-                                </select>
-                                <select value={newButton.shape} onChange={(event) => setNewButton({ ...newButton, shape: event.target.value })}>
-                                    <option value="rounded_square">方形</option>
-                                    <option value="circle">圓形</option>
-                                </select>
-                                <input type="color" value={newButton.background_color} onChange={(event) => setNewButton({ ...newButton, background_color: event.target.value })} title="背景色" />
-                                <input value={newButton.label} onChange={(event) => setNewButton({ ...newButton, label: event.target.value, content_type: event.target.value ? 'text' : 'icon' })} maxLength={100} placeholder="文字" />
-                                <button type="submit"><Plus size={17} />加入按鈕</button>
-                            </form>
+                            <div className="button-edit-panel">
+                                <div className="button-edit-toolbar">
+                                    <label>
+                                        分頁名稱
+                                        <input value={draft.name} maxLength={100} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
+                                    </label>
+                                    <label>
+                                        欄數
+                                        <select value={draft.layout_columns} onChange={(event) => changeColumns(Number(event.target.value))}>
+                                            {[2, 3, 4, 5].map((columns) => <option value={columns} key={columns}>{columns} 欄</option>)}
+                                        </select>
+                                    </label>
+                                    <div className="button-edit-actions">
+                                        <button type="button" className="button-ghost" onClick={cancelEditing}><X size={17} />取消</button>
+                                        <button type="button" onClick={saveDraft} disabled={processing}><Save size={17} />儲存</button>
+                                    </div>
+                                </div>
+                                <form className="button-builder" onSubmit={addButton}>
+                                    <select value={newButton.device_serial_number} onChange={(event) => setNewButton({ ...newButton, device_serial_number: event.target.value, product_function_code: '' })} required>
+                                        <option value="">選擇設備</option>
+                                        {targets.map((target) => (
+                                            <option value={target.device.serial_number} key={target.device.serial_number}>
+                                                {target.device.name || target.device.serial_number} · {target.device.product?.model_number}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <select value={newButton.product_function_code} onChange={(event) => setNewButton({ ...newButton, product_function_code: event.target.value })} required>
+                                        <option value="">選擇功能</option>
+                                        {groupedFunctions.map((item) => <option value={item.code} key={item.code}>{item.description}</option>)}
+                                    </select>
+                                    <select value={newButton.shape} onChange={(event) => setNewButton({ ...newButton, shape: event.target.value })}>
+                                        <option value="rounded_square">方形</option>
+                                        <option value="circle">圓形</option>
+                                    </select>
+                                    <input type="color" value={newButton.background_color} onChange={(event) => setNewButton({ ...newButton, background_color: event.target.value })} title="背景色" />
+                                    <input value={newButton.label} onChange={(event) => setNewButton({ ...newButton, label: event.target.value, content_type: event.target.value ? 'text' : 'icon' })} maxLength={100} placeholder="文字" />
+                                    <button type="submit"><Plus size={17} />加入按鈕</button>
+                                </form>
+                            </div>
                         )}
 
                         <div className="button-grid" style={{ '--button-columns': visiblePage.layout_columns }}>
@@ -402,6 +523,32 @@ export default function ButtonsIndex() {
                             ))}
                         </div>
                         {visiblePage.buttons.length === 0 && <p className="muted">這個分頁還沒有按鈕。</p>}
+                        {orderingPageIds && (
+                            <div className="button-page-order-backdrop" role="presentation">
+                                <section className="button-page-order-panel" role="dialog" aria-modal="true" aria-labelledby="button-page-order-title">
+                                    <div className="button-page-order-heading">
+                                        <button type="button" className="button-ghost" onClick={() => setOrderingPageIds(null)}>取消</button>
+                                        <h2 id="button-page-order-title">排序分頁</h2>
+                                        <button type="button" onClick={savePageOrder} disabled={processing}>儲存</button>
+                                    </div>
+                                    <div className="button-page-order-list">
+                                        {orderedPages.map((page, index) => (
+                                            <div className="button-page-order-row" key={page.public_id}>
+                                                <span>{page.name}</span>
+                                                <div>
+                                                    <button type="button" className="icon-button" aria-label="上移" disabled={index === 0} onClick={() => moveOrderingPage(page.public_id, -1)}>
+                                                        <ArrowUp size={20} />
+                                                    </button>
+                                                    <button type="button" className="icon-button" aria-label="下移" disabled={index === orderedPages.length - 1} onClick={() => moveOrderingPage(page.public_id, 1)}>
+                                                        <ArrowDown size={20} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            </div>
+                        )}
                     </section>
                 )}
             </AppLayout>
