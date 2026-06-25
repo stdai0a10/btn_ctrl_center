@@ -18,7 +18,7 @@ class ButtonSelectionService
             ->whereHas('currentRoom.members', fn ($query) => $query->whereKey($user->id))
             ->where('is_system_disabled', false)
             ->where('is_enabled', true)
-            ->whereHas('product', fn ($query) => $query->where('is_locked', false))
+            ->whereNotNull('product_id')
             ->orderBy('serial_number')
             ->get()
             ->map(function (Device $device): array {

@@ -63,9 +63,7 @@ class ButtonAvailabilityService
             return false;
         }
 
-        $device->loadMissing('product');
-
-        return ! (bool) $device->product?->is_locked;
+        return true;
     }
 
     /**

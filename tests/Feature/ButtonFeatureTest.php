@@ -80,6 +80,45 @@ class ButtonFeatureTest extends TestCase
             ->assertJsonMissing(['serial_number' => 'DEV-OTHER']);
     }
 
+    public function test_locked_product_devices_remain_selectable_for_buttons(): void
+    {
+        $owner = User::factory()->create();
+        [$device, $function] = $this->createSelectableDevice($owner, productLocked: true);
+
+        $this->actingAs($owner)
+            ->getJson('/api/buttons/selectable-targets')
+            ->assertOk()
+            ->assertJsonPath('data.0.device.serial_number', $device->serial_number)
+            ->assertJsonPath('data.0.functions.0.code', $function->code);
+
+        $pagePublicId = $this->actingAs($owner)
+            ->postJson('/api/button-pages', [
+                'name' => '客廳',
+                'layout_columns' => 3,
+            ])
+            ->assertCreated()
+            ->json('data.public_id');
+
+        $this->actingAs($owner)
+            ->putJson("/api/button-pages/{$pagePublicId}/layout", [
+                'name' => '客廳',
+                'layout_columns' => 3,
+                'buttons' => [[
+                    'device_serial_number' => $device->serial_number,
+                    'product_function_code' => $function->code,
+                    'position' => 0,
+                    'shape' => 'rounded_square',
+                    'background_color' => '#2563EB',
+                    'content_type' => 'icon',
+                    'icon_key' => 'power',
+                    'foreground_color' => '#FFFFFF',
+                ]],
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.buttons.0.device.serial_number', $device->serial_number)
+            ->assertJsonPath('data.buttons.0.function.code', $function->code);
+    }
+
     public function test_button_action_creates_device_job_and_request_id_is_idempotent(): void
     {
         $owner = User::factory()->create();
@@ -216,7 +255,7 @@ class ButtonFeatureTest extends TestCase
     /**
      * @return array{Device, ProductFunction}
      */
-    private function createSelectableDevice(User $owner, string $secret = 'device-secret'): array
+    private function createSelectableDevice(User $owner, string $secret = 'device-secret', bool $productLocked = false): array
     {
         $room = Room::factory()->create([
             'created_by_user_id' => $owner->id,
@@ -225,7 +264,7 @@ class ButtonFeatureTest extends TestCase
             'role' => Room::ROLE_OWNER,
             'joined_at' => now(),
         ]);
-        $product = Product::factory()->create(['is_locked' => false]);
+        $product = Product::factory()->create(['is_locked' => $productLocked]);
         $function = ProductFunction::factory()->create([
             'product_id' => $product->id,
             'is_enabled' => true,

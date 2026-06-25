@@ -36,7 +36,8 @@ export default function ButtonsIndex() {
     const [editing, setEditing] = useState(false);
     const [draft, setDraft] = useState(null);
     const [newPageName, setNewPageName] = useState('');
-    const [newButton, setNewButton] = useState(emptyButton);
+    const [buttonForm, setButtonForm] = useState(null);
+    const [buttonMenu, setButtonMenu] = useState(null);
     const [job, setJob] = useState(null);
     const [frontEndTimedOutJobId, setFrontEndTimedOutJobId] = useState(null);
     const [infoButton, setInfoButton] = useState(null);
@@ -209,6 +210,8 @@ export default function ButtonsIndex() {
         if (!activePage) return;
         setDraft(JSON.parse(JSON.stringify(activePage)));
         setEditing(true);
+        setButtonMenu(null);
+        setButtonForm(null);
         setPageMenuOpen(false);
         setPagePickerOpen(false);
         setCreatePageOpen(false);
@@ -219,6 +222,8 @@ export default function ButtonsIndex() {
     function cancelEditing() {
         setDraft(null);
         setEditing(false);
+        setButtonForm(null);
+        setButtonMenu(null);
     }
 
     async function saveDraft() {
@@ -254,48 +259,85 @@ export default function ButtonsIndex() {
         });
     }
 
-    function addButton(event) {
-        event.preventDefault();
-        const target = targets.find((item) => item.device.serial_number === newButton.device_serial_number);
-        const productFunction = target?.functions.find((item) => item.code === newButton.product_function_code);
-        if (!target || !productFunction) {
-            setError('請選擇設備與功能。');
-            return;
-        }
+    function openAddButtonForm() {
+        if (!draft) return;
 
         const nextPosition = draft.buttons.length === 0
             ? 0
             : Math.max(...draft.buttons.map((button) => button.position)) + 1;
 
-        setDraft({
-            ...draft,
-            buttons: [
-                ...draft.buttons,
-                {
-                    ...newButton,
-                    position: nextPosition,
-                    public_id: null,
-                    device: target.device,
-                    function: productFunction,
-                    availability: { available: true, reason: null, message: null },
-                },
-            ],
+        setButtonMenu(null);
+        setButtonForm({
+            mode: 'create',
+            index: null,
+            originalButton: null,
+            values: { ...emptyButton, position: nextPosition },
         });
-        setNewButton({ ...emptyButton, position: nextPosition + 1 });
     }
 
-    function updateDraftButton(index, updates) {
-        setDraft({
-            ...draft,
-            buttons: draft.buttons.map((button, current) => current === index ? { ...button, ...updates } : button),
+    function openEditButtonForm(index, button) {
+        setButtonMenu(null);
+        setButtonForm({
+            mode: 'edit',
+            index,
+            originalButton: button,
+            values: buttonToFormValues(button),
         });
+    }
+
+    function saveButtonForm(event) {
+        event.preventDefault();
+        if (!buttonForm || !draft) return;
+
+        const targetOptions = buttonFormTargets(targets, buttonForm.originalButton);
+        const values = normalizeButtonFormValues(buttonForm.values);
+        const target = targetOptions.find((item) => item.device.serial_number === values.device_serial_number);
+        const productFunction = target?.functions.find((item) => item.code === values.product_function_code);
+        if (!target || !productFunction) {
+            setError('請選擇設備與功能。');
+            return;
+        }
+
+        const targetUnchanged = buttonForm.originalButton
+            && buttonForm.originalButton.device?.serial_number === values.device_serial_number
+            && buttonForm.originalButton.function?.code === values.product_function_code;
+        const nextButton = {
+            ...(buttonForm.originalButton ?? {}),
+            ...values,
+            public_id: buttonForm.originalButton?.public_id ?? null,
+            device: target.device,
+            function: productFunction,
+            availability: targetUnchanged
+                ? buttonForm.originalButton.availability ?? { available: true, reason: null, message: null }
+                : { available: true, reason: null, message: null },
+        };
+
+        setDraft((currentDraft) => {
+            if (!currentDraft) return currentDraft;
+
+            if (buttonForm.mode === 'edit' && buttonForm.index !== null) {
+                return {
+                    ...currentDraft,
+                    buttons: currentDraft.buttons.map((button, current) => current === buttonForm.index ? nextButton : button),
+                };
+            }
+
+            return {
+                ...currentDraft,
+                buttons: [...currentDraft.buttons, nextButton],
+            };
+        });
+        setButtonForm(null);
     }
 
     function removeDraftButton(index) {
+        if (!window.confirm('確定要刪除這個按鈕？')) return;
+
         setDraft({
             ...draft,
             buttons: draft.buttons.filter((_, current) => current !== index),
         });
+        setButtonMenu(null);
     }
 
     async function trigger(button) {
@@ -315,15 +357,11 @@ export default function ButtonsIndex() {
         setJob(response.data.data.job);
     }
 
-    const groupedFunctions = useMemo(() => {
-        const target = targets.find((item) => item.device.serial_number === newButton.device_serial_number);
-        return target?.functions ?? [];
-    }, [targets, newButton.device_serial_number]);
-
     const orderedPages = orderingPageIds
         ? orderingPageIds.map((id) => pages.find((page) => page.public_id === id)).filter(Boolean)
         : [];
     const visibleTabCount = Math.min(Math.max(pages.length, 1), 4);
+    const formTargetOptions = buttonFormTargets(targets, buttonForm?.originalButton);
 
     return (
         <>
@@ -333,6 +371,28 @@ export default function ButtonsIndex() {
                 {error && <div className="notice error">{error}</div>}
                 {job && <JobPanel job={job} timedOut={jobTimedOut} onClose={() => setJob(null)} />}
                 {infoButton && <ButtonInfoDialog button={infoButton} onClose={() => setInfoButton(null)} />}
+                {buttonForm && (
+                    <ButtonFormDialog
+                        form={buttonForm}
+                        targets={formTargetOptions}
+                        onChange={(values) => setButtonForm({ ...buttonForm, values })}
+                        onClose={() => setButtonForm(null)}
+                        onSubmit={saveButtonForm}
+                    />
+                )}
+                {buttonMenu && (
+                    <ButtonTileActionMenu
+                        button={buttonMenu.button}
+                        position={buttonMenu.position}
+                        onClose={() => setButtonMenu(null)}
+                        onInfo={() => {
+                            setButtonMenu(null);
+                            setInfoButton(buttonMenu.button);
+                        }}
+                        onEdit={() => openEditButtonForm(buttonMenu.index, buttonMenu.button)}
+                        onRemove={() => removeDraftButton(buttonMenu.index)}
+                    />
+                )}
 
                 {loading && <p className="muted">載入中...</p>}
                 {!loading && pages.length === 0 && (
@@ -483,40 +543,39 @@ export default function ButtonsIndex() {
                                         <button type="button" onClick={saveDraft} disabled={processing}><Save size={17} />儲存</button>
                                     </div>
                                 </div>
-                                <form className="button-builder" onSubmit={addButton}>
-                                    <select value={newButton.device_serial_number} onChange={(event) => setNewButton({ ...newButton, device_serial_number: event.target.value, product_function_code: '' })} required>
-                                        <option value="">選擇設備</option>
-                                        {targets.map((target) => (
-                                            <option value={target.device.serial_number} key={target.device.serial_number}>
-                                                {target.device.name || target.device.serial_number} · {target.device.product?.model_number}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <select value={newButton.product_function_code} onChange={(event) => setNewButton({ ...newButton, product_function_code: event.target.value })} required>
-                                        <option value="">選擇功能</option>
-                                        {groupedFunctions.map((item) => <option value={item.code} key={item.code}>{item.description}</option>)}
-                                    </select>
-                                    <select value={newButton.shape} onChange={(event) => setNewButton({ ...newButton, shape: event.target.value })}>
-                                        <option value="rounded_square">方形</option>
-                                        <option value="circle">圓形</option>
-                                    </select>
-                                    <input type="color" value={newButton.background_color} onChange={(event) => setNewButton({ ...newButton, background_color: event.target.value })} title="背景色" />
-                                    <input value={newButton.label} onChange={(event) => setNewButton({ ...newButton, label: event.target.value, content_type: event.target.value ? 'text' : 'icon' })} maxLength={100} placeholder="文字" />
-                                    <button type="submit"><Plus size={17} />加入按鈕</button>
-                                </form>
+                                <div className="button-add-control">
+                                    <button type="button" onClick={openAddButtonForm}><Plus size={17} />加入按鈕</button>
+                                </div>
                             </div>
                         )}
 
                         <div className="button-grid" style={{ '--button-columns': visiblePage.layout_columns }}>
-                            {[...visiblePage.buttons].sort((a, b) => a.position - b.position).map((button, index) => (
+                            {visiblePage.buttons
+                                .map((button, index) => ({ button, index }))
+                                .sort((a, b) => a.button.position - b.button.position)
+                                .map(({ button, index }) => (
                                 <ButtonTile
                                     button={button}
                                     editing={editing}
                                     actionLocked={actionLocked}
                                     processing={processing}
                                     onTrigger={() => trigger(button)}
-                                    onInfo={() => setInfoButton(button)}
-                                    onUpdate={(updates) => updateDraftButton(index, updates)}
+                                    onInfo={() => {
+                                        setButtonMenu(null);
+                                        setInfoButton(button);
+                                    }}
+                                    onOpenMenu={(event) => {
+                                        const rect = event.currentTarget.getBoundingClientRect();
+                                        setButtonMenu({
+                                            index,
+                                            button,
+                                            position: {
+                                                x: rect.left + rect.width / 2,
+                                                y: rect.bottom + 8,
+                                            },
+                                        });
+                                    }}
+                                    onEdit={() => openEditButtonForm(index, button)}
                                     onRemove={() => removeDraftButton(index)}
                                     key={button.public_id ?? `${button.device.serial_number}-${button.position}-${index}`}
                                 />
@@ -556,45 +615,238 @@ export default function ButtonsIndex() {
     );
 }
 
-function ButtonTile({ button, editing, actionLocked, processing, onTrigger, onInfo, onUpdate, onRemove }) {
+function buttonToFormValues(button) {
+    return {
+        device_serial_number: button.device?.serial_number ?? '',
+        product_function_code: button.function?.code ?? '',
+        position: Number(button.position ?? 0),
+        shape: button.shape ?? 'rounded_square',
+        background_color: button.background_color ?? '#2563EB',
+        content_type: button.content_type ?? 'icon',
+        icon_key: button.icon_key ?? 'power',
+        label: button.label ?? '',
+        foreground_color: button.foreground_color ?? '#FFFFFF',
+    };
+}
+
+function normalizeButtonFormValues(values) {
+    const label = values.label?.trim() ?? '';
+
+    return {
+        ...values,
+        position: Number(values.position ?? 0),
+        content_type: label ? 'text' : 'icon',
+        icon_key: values.icon_key || 'power',
+        label: label || null,
+    };
+}
+
+function buttonFormTargets(targets, originalButton) {
+    if (!originalButton?.device?.serial_number) return targets;
+
+    const deviceSerial = originalButton.device.serial_number;
+    const functionCode = originalButton.function?.code;
+    const existingTarget = targets.find((target) => target.device.serial_number === deviceSerial);
+
+    if (!existingTarget) {
+        return [
+            ...targets,
+            {
+                device: originalButton.device,
+                functions: originalButton.function ? [originalButton.function] : [],
+            },
+        ];
+    }
+
+    if (!functionCode || existingTarget.functions.some((item) => item.code === functionCode)) {
+        return targets;
+    }
+
+    return targets.map((target) => target.device.serial_number === deviceSerial
+        ? { ...target, functions: [...target.functions, originalButton.function] }
+        : target);
+}
+
+function ButtonTile({ button, editing, actionLocked, processing, onTrigger, onInfo, onOpenMenu }) {
+    const longPressTimer = useRef(null);
+    const longPressTriggered = useRef(false);
     const Icon = iconMap[button.icon_key] ?? Power;
     const unavailable = !button.availability?.available;
     const disabledMessage = actionLocked
         ? '任務執行中，請等待完成或逾時。'
         : button.availability?.message;
-    const disabled = !editing && (unavailable || actionLocked || processing);
+    const actionDisabled = !editing && (unavailable || actionLocked || processing);
+
+    function clearLongPressTimer() {
+        if (longPressTimer.current === null) return;
+
+        window.clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+    }
+
+    function startLongPress() {
+        if (editing) return;
+
+        clearLongPressTimer();
+        longPressTriggered.current = false;
+        longPressTimer.current = window.setTimeout(() => {
+            longPressTriggered.current = true;
+            longPressTimer.current = null;
+            onInfo();
+        }, 600);
+    }
+
+    function finishLongPress() {
+        clearLongPressTimer();
+    }
+
+    useEffect(() => () => clearLongPressTimer(), []);
 
     return (
         <article className={`control-button-tile is-${button.shape}`}>
             <button
                 type="button"
-                className="control-button-face"
+                className={`control-button-face ${actionDisabled ? 'is-disabled' : ''}`}
                 style={{ backgroundColor: button.background_color, color: button.foreground_color }}
-                disabled={disabled}
-                onClick={() => !editing && onTrigger()}
+                aria-disabled={actionDisabled}
+                onPointerDown={startLongPress}
+                onPointerUp={finishLongPress}
+                onPointerCancel={finishLongPress}
+                onPointerLeave={finishLongPress}
+                onContextMenu={(event) => {
+                    if (editing) return;
+
+                    event.preventDefault();
+                    onInfo();
+                }}
+                onClick={(event) => {
+                    if (editing) {
+                        onOpenMenu(event);
+                        return;
+                    }
+
+                    if (longPressTriggered.current) {
+                        longPressTriggered.current = false;
+                        return;
+                    }
+
+                    if (actionDisabled) return;
+
+                    onTrigger();
+                }}
                 title={disabledMessage ?? button.function?.description}
             >
                 {button.content_type === 'text' && button.label ? <span>{button.label}</span> : <Icon size={28} />}
             </button>
-            <div className="control-button-meta">
-                <strong>{button.label || button.function?.description || button.icon_key}</strong>
-                <span>{button.device?.name || button.device?.serial_number}</span>
-                {disabledMessage && <small>{disabledMessage}</small>}
-                {!editing && (
-                    <button type="button" className="icon-button" title="按鈕資訊" onClick={onInfo}>
-                        <Info size={16} />
-                    </button>
-                )}
-            </div>
-            {editing && (
-                <div className="button-edit-fields">
-                    <input type="number" min="0" value={button.position} onChange={(event) => onUpdate({ position: Number(event.target.value) })} />
-                    <input type="color" value={button.background_color} onChange={(event) => onUpdate({ background_color: event.target.value })} />
-                    <input type="color" value={button.foreground_color} onChange={(event) => onUpdate({ foreground_color: event.target.value })} />
-                    <button type="button" className="button-danger" onClick={onRemove}><Trash2 size={16} />刪除</button>
-                </div>
-            )}
         </article>
+    );
+}
+
+function ButtonTileActionMenu({ button, position, onClose, onInfo, onEdit, onRemove }) {
+    const horizontal = position.x > window.innerWidth - 180 ? 'right' : position.x < 180 ? 'left' : 'center';
+    const vertical = position.y > window.innerHeight - 160 ? 'top' : 'bottom';
+
+    return (
+        <div className="button-action-menu-layer" role="presentation" onMouseDown={onClose}>
+            <div
+                className={`button-tile-menu is-${horizontal} is-${vertical}`}
+                role="menu"
+                aria-label={`${button.label || button.function?.description || '按鈕'}操作`}
+                style={{ left: position.x, top: position.y }}
+                onMouseDown={(event) => event.stopPropagation()}
+            >
+                <button type="button" role="menuitem" onClick={onInfo}><Info size={16} />按鈕資訊</button>
+                <button type="button" role="menuitem" onClick={onEdit}><Square size={16} />修改按鈕</button>
+                <button type="button" role="menuitem" className="is-danger" onClick={onRemove}><Trash2 size={16} />刪除按鈕</button>
+            </div>
+        </div>
+    );
+}
+
+function ButtonFormDialog({ form, targets, onChange, onClose, onSubmit }) {
+    const values = form.values;
+    const isEditing = form.mode === 'edit';
+    const selectedTarget = targets.find((target) => target.device.serial_number === values.device_serial_number);
+    const functions = selectedTarget?.functions ?? [];
+
+    function update(updates) {
+        onChange({ ...values, ...updates });
+    }
+
+    return (
+        <div className="app-dialog-backdrop" role="presentation" onMouseDown={onClose}>
+            <form className="app-dialog button-form-dialog" role="dialog" aria-modal="true" aria-labelledby="button-form-title" onSubmit={onSubmit} onMouseDown={(event) => event.stopPropagation()}>
+                <div className="app-dialog-heading">
+                    <h2 id="button-form-title">{form.mode === 'edit' ? '修改按鈕' : '加入按鈕'}</h2>
+                    <button type="button" className="app-dialog-close" onClick={onClose} aria-label="關閉"><X size={18} /></button>
+                </div>
+                <div className="button-form-grid">
+                    <label>
+                        設備
+                        <select
+                            value={values.device_serial_number}
+                            onChange={(event) => update({ device_serial_number: event.target.value, product_function_code: '' })}
+                            disabled={isEditing}
+                            required
+                        >
+                            <option value="">選擇設備</option>
+                            {targets.map((target) => (
+                                <option value={target.device.serial_number} key={target.device.serial_number}>
+                                    {target.device.name || target.device.serial_number} · {target.device.product?.model_number}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                    <label>
+                        功能
+                        <select
+                            value={values.product_function_code}
+                            onChange={(event) => update({ product_function_code: event.target.value })}
+                            disabled={isEditing}
+                            required
+                        >
+                            <option value="">選擇功能</option>
+                            {functions.map((item) => <option value={item.code} key={item.code}>{item.description}</option>)}
+                        </select>
+                    </label>
+                    <label>
+                        位置
+                        <input type="number" min="0" value={values.position} onChange={(event) => update({ position: Number(event.target.value) })} />
+                    </label>
+                    <label>
+                        形狀
+                        <select value={values.shape} onChange={(event) => update({ shape: event.target.value })}>
+                            <option value="rounded_square">方形</option>
+                            <option value="circle">圓形</option>
+                        </select>
+                    </label>
+                    <label>
+                        背景色
+                        <input type="color" value={values.background_color} onChange={(event) => update({ background_color: event.target.value })} />
+                    </label>
+                    <label>
+                        文字/icon 色
+                        <input type="color" value={values.foreground_color} onChange={(event) => update({ foreground_color: event.target.value })} />
+                    </label>
+                    <label>
+                        Icon
+                        <select value={values.icon_key} onChange={(event) => update({ icon_key: event.target.value })}>
+                            <option value="power">Power</option>
+                            <option value="square">Square</option>
+                            <option value="circle">Circle</option>
+                        </select>
+                    </label>
+                    <label>
+                        文字
+                        <input value={values.label ?? ''} onChange={(event) => update({ label: event.target.value })} maxLength={100} placeholder="留空時顯示 icon" />
+                    </label>
+                </div>
+                <div className="button-form-actions">
+                    <button type="button" className="button-ghost" onClick={onClose}>取消</button>
+                    <button type="submit"><Save size={17} />套用</button>
+                </div>
+            </form>
+        </div>
     );
 }
 

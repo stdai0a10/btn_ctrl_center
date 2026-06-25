@@ -1606,6 +1606,12 @@ button:disabled {
     margin-top: 0.75rem;
 }
 
+.button-add-control {
+    display: flex;
+    justify-content: center;
+    margin-top: 0.75rem;
+}
+
 .button-builder select,
 .button-builder input {
     min-width: 0;
@@ -1621,6 +1627,7 @@ button:disabled {
 }
 
 .control-button-tile {
+    position: relative;
     display: flex;
     min-width: 0;
     flex-direction: column;
@@ -1644,32 +1651,11 @@ button:disabled {
     border-radius: 999px;
 }
 
-.control-button-face:disabled {
+.control-button-face.is-disabled,
+.control-button-face[aria-disabled='true'] {
     cursor: not-allowed;
     filter: grayscale(1);
     opacity: 0.5;
-}
-
-.control-button-meta {
-    display: flex;
-    min-width: 0;
-    flex-direction: column;
-    gap: 0.15rem;
-    font-size: 0.85rem;
-}
-
-.control-button-meta .icon-button {
-    width: 2rem;
-    height: 2rem;
-    padding: 0;
-    align-self: flex-start;
-    border-radius: 8px;
-}
-
-.control-button-meta strong,
-.control-button-meta span,
-.control-button-meta small {
-    overflow-wrap: anywhere;
 }
 
 .button-edit-fields {
@@ -1686,6 +1672,140 @@ button:disabled {
 
 .button-edit-fields button {
     grid-column: 1 / -1;
+}
+
+.button-action-menu-layer {
+    position: fixed;
+    z-index: 1150;
+    inset: 0;
+    background: transparent;
+}
+
+.button-tile-menu {
+    position: fixed;
+    z-index: 1151;
+    width: min(13rem, calc(100vw - 1.5rem));
+    border: 2px solid var(--line);
+    background: #ffffff;
+    box-shadow: 0 12px 28px rgba(31, 39, 35, 0.14);
+}
+
+.button-tile-menu.is-center {
+    transform: translateX(-50%);
+}
+
+.button-tile-menu.is-right {
+    transform: translateX(calc(-100% + 0.75rem));
+}
+
+.button-tile-menu.is-left {
+    transform: translateX(-0.75rem);
+}
+
+.button-tile-menu.is-top {
+    transform: translate(-50%, calc(-100% - 3rem));
+}
+
+.button-tile-menu.is-top.is-right {
+    transform: translate(calc(-100% + 0.75rem), calc(-100% - 3rem));
+}
+
+.button-tile-menu.is-top.is-left {
+    transform: translate(-0.75rem, calc(-100% - 3rem));
+}
+
+.button-tile-menu button {
+    display: flex;
+    width: 100%;
+    min-height: 2.55rem;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.45rem;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    padding: 0.55rem 0.7rem;
+    background: #ffffff;
+    color: var(--ink);
+    font-size: 0.85rem;
+}
+
+.button-tile-menu button:last-child {
+    border-bottom: 0;
+}
+
+.button-tile-menu button:hover {
+    background: #edf5f3;
+}
+
+.button-tile-menu button.is-danger {
+    color: var(--danger);
+}
+
+.button-form-dialog {
+    width: min(100%, 36rem);
+}
+
+.button-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+    margin-top: 1rem;
+}
+
+.button-form-grid label {
+    min-width: 0;
+}
+
+.button-form-grid label:first-child,
+.button-form-grid label:nth-child(2),
+.button-form-grid label:last-child {
+    grid-column: 1 / -1;
+}
+
+.button-form-grid input,
+.button-form-grid select {
+    width: 100%;
+    min-width: 0;
+}
+
+.button-form-grid select:disabled,
+.button-form-grid input:disabled {
+    cursor: not-allowed;
+    background: #edf1ef;
+    color: var(--muted);
+    opacity: 1;
+}
+
+.button-form-grid input[type='color'] {
+    width: 100%;
+    height: 2.75rem;
+    box-sizing: border-box;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 0.2rem;
+    background: #ffffff;
+}
+
+.button-form-grid input[type='color']::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.button-form-grid input[type='color']::-webkit-color-swatch {
+    border: 0;
+    border-radius: 4px;
+}
+
+.button-form-grid input[type='color']::-moz-color-swatch {
+    border: 0;
+    border-radius: 4px;
+}
+
+.button-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 1.2rem;
 }
 
 .button-page-order-backdrop {
@@ -1820,6 +1940,14 @@ button:disabled {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 0.75rem;
         padding: 0.65rem;
+    }
+
+    .button-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .button-form-grid label {
+        grid-column: 1 / -1;
     }
 
     .button-page-order-backdrop {

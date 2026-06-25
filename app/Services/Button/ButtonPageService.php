@@ -148,7 +148,6 @@ class ButtonPageService
             && ! $device->is_system_disabled
             && $device->product_id !== null
             && (int) $function->product_id === (int) $device->product_id
-            && $function->is_enabled
-            && ! (bool) $device->product?->is_locked;
+            && $function->is_enabled;
     }
 }
