@@ -23,6 +23,10 @@ class ManagementRbacTest extends TestCase
         $systemAdmin->assignRole(ManagementRbac::SYSTEM_ADMIN_ROLE);
 
         $this->assertTrue($serviceManager->can('manage.access'));
+        $this->assertTrue($serviceManager->can('manage.device_runtime.view'));
+        $this->assertTrue($serviceManager->can('manage.button_jobs.view'));
+        $this->assertFalse($serviceManager->can('manage.device_runtime.manage'));
+        $this->assertFalse($serviceManager->can('manage.button_jobs.cancel'));
         $this->assertFalse($serviceManager->can('manage.service_managers.view'));
         $this->assertFalse($serviceManager->can('audit.access'));
 

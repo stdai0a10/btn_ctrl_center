@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Manage\AuditController as ManageAuditController;
 use App\Http\Controllers\Manage\AuthController as ManageAuthController;
+use App\Http\Controllers\Manage\ButtonJobController as ManageButtonJobController;
 use App\Http\Controllers\Manage\DashboardController as ManageDashboardController;
 use App\Http\Controllers\Manage\DeviceController as ManageDeviceController;
+use App\Http\Controllers\Manage\DeviceRuntimeController as ManageDeviceRuntimeController;
 use App\Http\Controllers\Manage\ProductController as ManageProductController;
 use App\Http\Controllers\Manage\RoomController as ManageRoomController;
 use App\Http\Controllers\Manage\ServiceManagerController as ManageServiceManagerController;
@@ -70,6 +72,9 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
         ]))
             ->middleware('permission:manage.devices.detail')
             ->name('devices.show');
+        Route::get('/device-runtime', fn () => Inertia::render('Manage/DeviceRuntime/Index'))
+            ->middleware('permission:manage.device_runtime.view')
+            ->name('device-runtime.index');
         Route::get('/products', fn () => Inertia::render('Manage/Products/Index'))
             ->middleware('permission:manage.products.view')
             ->name('products.index');
@@ -141,6 +146,24 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
             Route::get('/devices/{serial_number}', [ManageDeviceController::class, 'show'])
                 ->middleware('permission:manage.devices.detail')
                 ->name('devices.show');
+            Route::get('/device-runtime', [ManageDeviceRuntimeController::class, 'index'])
+                ->middleware('permission:manage.device_runtime.view')
+                ->name('device-runtime.index');
+            Route::post('/device-runtime/devices/{serial_number}/disable', [ManageDeviceRuntimeController::class, 'disable'])
+                ->middleware('permission:manage.device_runtime.manage')
+                ->name('device-runtime.disable');
+            Route::post('/device-runtime/devices/{serial_number}/enable', [ManageDeviceRuntimeController::class, 'enable'])
+                ->middleware('permission:manage.device_runtime.manage')
+                ->name('device-runtime.enable');
+            Route::post('/device-runtime/devices/{serial_number}/revoke-tokens', [ManageDeviceRuntimeController::class, 'revokeTokens'])
+                ->middleware('permission:manage.device_runtime.manage')
+                ->name('device-runtime.revoke-tokens');
+            Route::get('/button-jobs', [ManageButtonJobController::class, 'index'])
+                ->middleware('permission:manage.button_jobs.view')
+                ->name('button-jobs.index');
+            Route::post('/button-jobs/{button_action_job_public_id}/cancel', [ManageButtonJobController::class, 'cancel'])
+                ->middleware('permission:manage.button_jobs.cancel')
+                ->name('button-jobs.cancel');
             Route::get('/products', [ManageProductController::class, 'index'])
                 ->middleware('permission:manage.products.view')
                 ->name('products.index');
