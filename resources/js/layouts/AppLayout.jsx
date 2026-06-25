@@ -21,6 +21,7 @@ export default function AppLayout({ children, contentClassName = '' }) {
     }
 
     const navItems = [
+        { label: '按鈕', href: '/buttons' },
         { label: '房間管理', href: '/rooms' },
         { label: '帳號管理', href: '/account/profile' },
     ];

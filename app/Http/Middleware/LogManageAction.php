@@ -54,6 +54,8 @@ class LogManageAction
             'manage.api.rooms.show', 'manage.api.rooms.users' => 'rooms.detail.view',
             'manage.api.rooms.devices' => 'rooms.devices.view',
             'manage.api.devices.show' => 'devices.detail.view',
+            'manage.api.device-runtime.index' => 'device_runtime.view',
+            'manage.api.button-jobs.index' => 'button_jobs.view',
             'manage.api.products.show' => 'products.detail.view',
             'manage.api.audit.login-failures' => 'audit.login_failures.view',
             'manage.api.audit.manage-actions' => 'audit.manage_actions.view',
