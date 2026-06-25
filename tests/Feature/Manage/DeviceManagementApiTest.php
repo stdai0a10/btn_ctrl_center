@@ -4,6 +4,7 @@ namespace Tests\Feature\Manage;
 
 use App\Models\Device;
 use App\Models\DeviceTransferLog;
+use App\Models\Product;
 use App\Models\Room;
 use App\Models\User;
 use App\Support\ManagementRbac;
@@ -130,10 +131,15 @@ class DeviceManagementApiTest extends TestCase
     {
         $this->manager->removeRole(ManagementRbac::SERVICE_MANAGER_ROLE);
         $this->manager->assignRole(ManagementRbac::SYSTEM_ADMIN_ROLE);
+        $product = Product::factory()->create([
+            'model_number' => 'BTN-001',
+            'name' => 'Smart Button',
+        ]);
 
         $response = $this->asManageUser()
             ->withHeader('User-Agent', 'Device Admin Test')
             ->postJson('/manage/api/devices', [
+                'product_public_id' => $product->public_id,
                 'serial_number' => '  device-new-001  ',
                 'secret' => 'physical-secret',
                 'secret_confirmation' => 'physical-secret',
@@ -141,6 +147,8 @@ class DeviceManagementApiTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.serial_number', 'DEVICE-NEW-001')
             ->assertJsonPath('data.room', null)
+            ->assertJsonPath('data.product.public_id', $product->public_id)
+            ->assertJsonPath('data.product.model_number', 'BTN-001')
             ->assertJsonPath('data.is_locked', false)
             ->assertJsonPath('data.is_enabled', true)
             ->assertJsonMissingPath('data.secret')
@@ -150,6 +158,7 @@ class DeviceManagementApiTest extends TestCase
 
         $this->assertNull($device->current_room_id);
         $this->assertNull($device->name);
+        $this->assertSame($product->id, $device->product_id);
         $this->assertTrue(Hash::check('physical-secret', $device->secret_hash));
         $this->assertNotSame('physical-secret', $device->secret_hash);
 
@@ -164,13 +173,33 @@ class DeviceManagementApiTest extends TestCase
         $encodedLog = json_encode(\App\Models\ManageActionLog::query()->latest('id')->firstOrFail()->metadata);
         $this->assertStringNotContainsString('physical-secret', $encodedLog);
         $this->assertStringNotContainsString('secret_hash', $encodedLog);
+        $this->assertStringContainsString($product->public_id, $encodedLog);
         $this->assertSame('DEVICE-NEW-001', $response->json('data.serial_number'));
+    }
+
+    public function test_system_admin_must_reference_existing_product_when_creating_device(): void
+    {
+        $this->manager->removeRole(ManagementRbac::SERVICE_MANAGER_ROLE);
+        $this->manager->assignRole(ManagementRbac::SYSTEM_ADMIN_ROLE);
+
+        $this->asManageUser()
+            ->postJson('/manage/api/devices', [
+                'product_public_id' => 'PRD-NOTFOUND000',
+                'serial_number' => 'DEVICE-NO-PRODUCT',
+                'secret' => 'physical-secret',
+                'secret_confirmation' => 'physical-secret',
+            ])
+            ->assertNotFound()
+            ->assertJsonPath('code', 'PRODUCT_NOT_FOUND');
+
+        $this->assertDatabaseMissing('devices', ['serial_number' => 'DEVICE-NO-PRODUCT']);
     }
 
     public function test_service_manager_cannot_create_device(): void
     {
         $this->asManageUser()
             ->postJson('/manage/api/devices', [
+                'product_public_id' => Product::factory()->create()->public_id,
                 'serial_number' => 'DEVICE-FORBIDDEN',
                 'secret' => 'physical-secret',
                 'secret_confirmation' => 'physical-secret',
@@ -184,10 +213,12 @@ class DeviceManagementApiTest extends TestCase
     {
         $this->manager->removeRole(ManagementRbac::SERVICE_MANAGER_ROLE);
         $this->manager->assignRole(ManagementRbac::SYSTEM_ADMIN_ROLE);
+        $product = Product::factory()->create();
         Device::factory()->create(['serial_number' => 'DEVICE-DUPLICATE']);
 
         $this->asManageUser()
             ->postJson('/manage/api/devices', [
+                'product_public_id' => $product->public_id,
                 'serial_number' => ' device-duplicate ',
                 'secret' => 'must-not-leak',
                 'secret_confirmation' => 'must-not-leak',
