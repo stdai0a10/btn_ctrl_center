@@ -644,6 +644,7 @@ export default function RoomShow({ roomPublicId }) {
                                                 </div>
                                             )}
                                             <span>{device.serial_number} · {device.is_locked ? '已上鎖' : '未上鎖'} · {device.is_enabled ? '已啟用' : '已停用'}</span>
+                                            <span>{device.product ? `${device.product.model_number} · ${device.product.name}` : '未指定產品'}</span>
                                         </div>
                                     </article>
                                 ))}

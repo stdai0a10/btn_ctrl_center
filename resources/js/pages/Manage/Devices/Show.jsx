@@ -49,6 +49,7 @@ export default function ManageDeviceShow({ serialNumber }) {
                             <dl className="detail-list">
                                 <Detail label="設備序號" value={device.serial_number} />
                                 <Detail label="設備名稱" value={device.name ?? '-'} />
+                                <Detail label="產品" value={device.product ? <Link className="inline-link" href={`/manage/products/${device.product.public_id}`}>{device.product.model_number} · {device.product.name}</Link> : '未指定產品'} />
                                 <Detail label="鎖定狀態" value={device.is_locked ? '已上鎖' : '未上鎖'} />
                                 <Detail label="啟用狀態" value={device.is_enabled ? '已啟用' : '已停用'} />
                                 <Detail label="建立時間" value={formatDate(device.created_at)} />
@@ -64,6 +65,24 @@ export default function ManageDeviceShow({ serialNumber }) {
                                     <Detail label="房間狀態" value={device.room.status === 'deleted' ? '已刪除' : '正常'} />
                                 </dl>
                             ) : <p className="muted">設備尚未加入房間</p>}
+                        </section>
+                        <section className="panel manage-wide-panel">
+                            <div className="panel-heading"><h2>產品功能</h2>{device.product?.functions && <span className="status-pill">{device.product.functions.length} 項</span>}</div>
+                            {!device.product && <p className="muted">此設備尚未指定產品</p>}
+                            {device.product && (!device.product.functions || device.product.functions.length === 0) && <p className="muted">此產品尚未設定功能</p>}
+                            {device.product?.functions?.length > 0 && (
+                                <div className="table-wrap">
+                                    <table className="data-table">
+                                        <thead><tr><th>功能代碼</th><th>功能說明</th></tr></thead>
+                                        <tbody>{device.product.functions.map((item) => (
+                                            <tr key={item.code}>
+                                                <td className="account-code">{item.code}</td>
+                                                <td>{item.description}</td>
+                                            </tr>
+                                        ))}</tbody>
+                                    </table>
+                                </div>
+                            )}
                         </section>
                         <section className="panel manage-wide-panel">
                             <div className="panel-heading"><h2>設備移轉紀錄</h2>{transfers && <span className="status-pill">{transfers.pagination.total} 筆</span>}</div>

@@ -121,10 +121,11 @@ export default function ManageRoomShow({ roomPublicId }) {
                                 {devices.length > 0 && (
                                     <div className="table-wrap">
                                         <table className="data-table">
-                                            <thead><tr><th>設備序號</th><th>設備名稱</th><th>鎖定狀態</th><th>啟用狀態</th><th>建立時間</th></tr></thead>
+                                            <thead><tr><th>設備序號</th><th>產品</th><th>設備名稱</th><th>鎖定狀態</th><th>啟用狀態</th><th>建立時間</th></tr></thead>
                                             <tbody>{devices.map((device) => (
                                                 <tr key={device.serial_number}>
                                                     <td><Link className="inline-link account-code" href={`/manage/devices/${encodeURIComponent(device.serial_number)}`}>{device.serial_number}</Link></td>
+                                                    <td>{device.product ? `${device.product.model_number} · ${device.product.name}` : '未指定產品'}</td>
                                                     <td>{device.name ?? '-'}</td>
                                                     <td>{device.is_locked ? '已上鎖' : '未上鎖'}</td>
                                                     <td>{device.is_enabled ? '已啟用' : '已停用'}</td>
