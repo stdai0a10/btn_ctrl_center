@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\CleanupExpiredAuthArtifacts;
+use App\Console\Commands\CleanupButtonRuntime;
 use App\Console\Commands\SystemAdmin\AddSystemAdmin;
 use App\Console\Commands\SystemAdmin\ListSystemAdmins;
 use App\Console\Commands\SystemAdmin\RemoveSystemAdmin;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withCommands([
+        CleanupButtonRuntime::class,
         CleanupExpiredAuthArtifacts::class,
         AddSystemAdmin::class,
         ListSystemAdmins::class,
