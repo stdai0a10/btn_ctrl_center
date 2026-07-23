@@ -17,7 +17,15 @@ class ProductFunction extends Model
         'product_id',
         'code',
         'description',
+        'is_enabled',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_enabled' => 'boolean',
+        ];
+    }
 
     protected static function booted(): void
     {

@@ -68,6 +68,14 @@ export default function ManageIndex() {
                                             <span>查看服務內所有房間與房間成員</span>
                                         </div>
                                     </Link>
+                                    {admin.permissions.includes('manage.device_runtime.view') && (
+                                        <Link className="list-item manage-link-item" href="/manage/device-runtime">
+                                            <div>
+                                                <strong>設備執行</strong>
+                                                <span>查看設備 runtime、JWT 狀態與按鈕任務</span>
+                                            </div>
+                                        </Link>
+                                    )}
                                     {admin.permissions.includes('manage.service_managers.view') && (
                                         <Link className="list-item manage-link-item" href="/manage/service-managers">
                                             <div>

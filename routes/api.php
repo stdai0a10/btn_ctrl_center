@@ -7,6 +7,11 @@ use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\Account\ProfileController;
 use App\Http\Controllers\Account\ProviderBindingController;
 use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\ButtonActionController;
+use App\Http\Controllers\ButtonPageController;
+use App\Http\Controllers\ButtonTargetController;
+use App\Http\Controllers\DeviceAuthController;
+use App\Http\Controllers\DeviceJobController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\RoomInvitationController;
 use App\Http\Controllers\RoomMemberController;
@@ -41,6 +46,11 @@ Route::post('/auth/reset-password', [ResetPasswordController::class, 'store']);
 Route::get('/auth/line/redirect', [LineAuthController::class, 'redirect'])->middleware('web')->name('auth.line.redirect');
 Route::get('/auth/line/callback', [LineAuthController::class, 'callback'])->middleware('web')->name('auth.line.callback');
 Route::post('/auth/line/liff', [LineAuthController::class, 'liff']);
+Route::post('/device-auth/long-token', [DeviceAuthController::class, 'longToken']);
+Route::post('/devices/{serial_number}/access-tokens', [DeviceAuthController::class, 'accessToken']);
+Route::post('/devices/{serial_number}/poll', [DeviceJobController::class, 'poll']);
+Route::post('/device-jobs/{button_action_job_public_id}/progress', [DeviceJobController::class, 'progress']);
+Route::post('/device-jobs/{button_action_job_public_id}/complete', [DeviceJobController::class, 'complete']);
 
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/auth/logout', [LoginController::class, 'destroy']);
@@ -84,4 +94,15 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/rooms/{room}/devices/{device}/unlock', [DeviceController::class, 'unlock']);
     Route::post('/rooms/{room}/devices/{device}/enable', [DeviceController::class, 'enable']);
     Route::post('/rooms/{room}/devices/{device}/disable', [DeviceController::class, 'disable']);
+
+    Route::get('/button-pages', [ButtonPageController::class, 'index']);
+    Route::post('/button-pages', [ButtonPageController::class, 'store']);
+    Route::patch('/button-pages/{buttonPage}', [ButtonPageController::class, 'update']);
+    Route::put('/button-pages/{buttonPage}/layout', [ButtonPageController::class, 'saveLayout']);
+    Route::delete('/button-pages/{buttonPage}', [ButtonPageController::class, 'destroy']);
+    Route::put('/button-pages/order', [ButtonPageController::class, 'order']);
+    Route::get('/buttons/selectable-targets', ButtonTargetController::class);
+    Route::post('/button-actions', [ButtonActionController::class, 'store']);
+    Route::get('/button-actions/current', [ButtonActionController::class, 'current']);
+    Route::get('/button-actions/{buttonActionJob}', [ButtonActionController::class, 'show']);
 });

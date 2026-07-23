@@ -17,6 +17,8 @@ final class ManagementRbac
         'manage.rooms.detail',
         'manage.devices.view',
         'manage.devices.detail',
+        'manage.device_runtime.view',
+        'manage.button_jobs.view',
         'manage.products.view',
         'manage.products.detail',
     ];
@@ -34,6 +36,8 @@ final class ManagementRbac
         'manage.product_functions.create',
         'manage.product_functions.update',
         'manage.product_functions.delete',
+        'manage.device_runtime.manage',
+        'manage.button_jobs.cancel',
         'audit.access',
         'audit.login_failures.view',
         'audit.manage_actions.view',

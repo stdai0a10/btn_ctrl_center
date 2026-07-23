@@ -130,6 +130,36 @@ class ManageMiddlewareTest extends TestCase
             ->assertOk();
     }
 
+    public function test_device_runtime_routes_require_specific_permissions(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(['manage.access', 'manage.devices.view']);
+
+        $this->actingAs($user)
+            ->withSession($this->manageSession($user))
+            ->get('/manage/device-runtime')
+            ->assertForbidden();
+        $this->actingAs($user)
+            ->withSession($this->manageSession($user))
+            ->getJson('/manage/api/device-runtime')
+            ->assertForbidden();
+
+        $user->givePermissionTo(['manage.device_runtime.view', 'manage.button_jobs.view']);
+
+        $this->actingAs($user)
+            ->withSession($this->manageSession($user))
+            ->get('/manage/device-runtime')
+            ->assertOk();
+        $this->actingAs($user)
+            ->withSession($this->manageSession($user))
+            ->getJson('/manage/api/device-runtime')
+            ->assertOk();
+        $this->actingAs($user)
+            ->withSession($this->manageSession($user))
+            ->getJson('/manage/api/button-jobs')
+            ->assertOk();
+    }
+
     /**
      * @return array<string, mixed>
      */
