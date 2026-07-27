@@ -25,7 +25,7 @@ export default function ManageDeviceCreate() {
             try {
                 const response = await window.axios.get('/manage/api/products', {
                     params: {
-                        suggest: true,
+                        suggest: 1,
                         search: productQuery,
                         per_page: 10,
                     },
@@ -131,12 +131,12 @@ export default function ManageDeviceCreate() {
                         </label>
                         <label>
                             隱碼
-                            <input type="password" value={form.secret} onChange={(event) => setForm({ ...form, secret: event.target.value })} maxLength={255} autoComplete="new-password" required />
+                            <input type="text" value={form.secret} onChange={(event) => setForm({ ...form, secret: event.target.value })} maxLength={255} autoComplete="new-password" required />
                             {errors.secret?.map((error) => <small className="field-error" key={error}>{error}</small>)}
                         </label>
                         <label>
                             確認隱碼
-                            <input type="password" value={form.secret_confirmation} onChange={(event) => setForm({ ...form, secret_confirmation: event.target.value })} maxLength={255} autoComplete="new-password" required />
+                            <input type="text" value={form.secret_confirmation} onChange={(event) => setForm({ ...form, secret_confirmation: event.target.value })} maxLength={255} autoComplete="new-password" required />
                         </label>
                         <button type="submit" disabled={processing}>{processing ? '建立中...' : '建立設備'}</button>
                     </form>
