@@ -718,7 +718,7 @@ export default function RoomShow({ roomPublicId }) {
                                     <label>
                                         隱碼
                                         <input
-                                            type="password"
+                                            type="text"
                                             value={deviceForm.secret}
                                             onChange={(event) => setDeviceForm({ ...deviceForm, secret: event.target.value })}
                                             required

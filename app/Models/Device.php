@@ -60,6 +60,21 @@ class Device extends Model
         ];
     }
 
+    /**
+     * The devices table uses MySQL TIMESTAMP columns with the database session
+     * configured for the application timezone. Normalize incoming DateTime
+     * values before formatting so UTC Carbon instances are not interpreted by
+     * MySQL as local wall-clock values.
+     */
+    public function fromDateTime($value)
+    {
+        return empty($value)
+            ? $value
+            : $this->asDateTime($value)
+                ->timezone(config('app.timezone'))
+                ->format($this->getDateFormat());
+    }
+
     public function currentRoom(): BelongsTo
     {
         return $this->belongsTo(Room::class, 'current_room_id')->withTrashed();
