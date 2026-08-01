@@ -8,15 +8,26 @@ use App\Services\Button\ButtonAvailabilityService;
 use App\Services\Button\ButtonPageService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use OpenApi\Attributes as OA;
 
 class ButtonPageController extends ApiController
 {
     public function __construct(
         private readonly ButtonPageService $pages,
         private readonly ButtonAvailabilityService $availability,
-    ) {
-    }
+    ) {}
 
+    #[OA\Get(
+        path: '/api/button-pages',
+        operationId: 'buttonPagesIndex',
+        summary: 'List button pages',
+        security: [['sessionCookie' => []]],
+        tags: ['Button Pages'],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function index(Request $request)
     {
         $pages = ButtonPage::query()
@@ -31,6 +42,18 @@ class ButtonPageController extends ApiController
         return $this->response($pages);
     }
 
+    #[OA\Post(
+        path: '/api/button-pages',
+        operationId: 'buttonPagesStore',
+        summary: 'Create a button page',
+        security: [['sessionCookie' => []]],
+        tags: ['Button Pages'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ButtonPageRequest')),
+        responses: [
+            new OA\Response(response: 201, ref: '#/components/responses/Created'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function store(Request $request)
     {
         $validated = $request->validate($this->pageRules());
@@ -40,6 +63,19 @@ class ButtonPageController extends ApiController
         return $this->response($this->pagePayload($request, $page->load('items')), '按鈕分頁已建立。', 201);
     }
 
+    #[OA\Patch(
+        path: '/api/button-pages/{buttonPage}',
+        operationId: 'buttonPagesUpdate',
+        summary: 'Update a button page',
+        security: [['sessionCookie' => []]],
+        tags: ['Button Pages'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathButtonPage')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ButtonPageRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function update(Request $request, string $buttonPagePublicId)
     {
         $page = $this->findOwnedPage($request, $buttonPagePublicId);
@@ -50,6 +86,19 @@ class ButtonPageController extends ApiController
         return $this->response($this->pagePayload($request, $page->load('items.device.currentRoom', 'items.device.product', 'items.productFunction')), '按鈕分頁已更新。');
     }
 
+    #[OA\Put(
+        path: '/api/button-pages/{buttonPage}/layout',
+        operationId: 'buttonPagesSaveLayout',
+        summary: 'Save a button page layout',
+        security: [['sessionCookie' => []]],
+        tags: ['Button Pages'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathButtonPage')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ButtonPageLayoutRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function saveLayout(Request $request, string $buttonPagePublicId)
     {
         $page = $this->findOwnedPage($request, $buttonPagePublicId);
@@ -79,6 +128,18 @@ class ButtonPageController extends ApiController
         return $this->response($this->pagePayload($request, $page), '按鈕分頁已儲存。');
     }
 
+    #[OA\Delete(
+        path: '/api/button-pages/{buttonPage}',
+        operationId: 'buttonPagesDestroy',
+        summary: 'Delete a button page',
+        security: [['sessionCookie' => []]],
+        tags: ['Button Pages'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathButtonPage')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function destroy(Request $request, string $buttonPagePublicId)
     {
         $this->pages->delete($this->findOwnedPage($request, $buttonPagePublicId));
@@ -86,6 +147,18 @@ class ButtonPageController extends ApiController
         return $this->response(null, '按鈕分頁已刪除。');
     }
 
+    #[OA\Put(
+        path: '/api/button-pages/order',
+        operationId: 'buttonPagesOrder',
+        summary: 'Reorder button pages',
+        security: [['sessionCookie' => []]],
+        tags: ['Button Pages'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ButtonPageOrderRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function order(Request $request)
     {
         $validated = $request->validate([

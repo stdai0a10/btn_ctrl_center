@@ -10,9 +10,21 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 
 class LoginController extends ApiController
 {
+    #[OA\Post(
+        path: '/api/auth/login/email',
+        operationId: 'authLoginEmail',
+        summary: 'Log in with email and password',
+        tags: ['Authentication'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/EmailLoginRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -61,6 +73,17 @@ class LoginController extends ApiController
         ], '登入成功。');
     }
 
+    #[OA\Post(
+        path: '/api/auth/logout',
+        operationId: 'authLogout',
+        summary: 'Log out of the current session',
+        security: [['sessionCookie' => []]],
+        tags: ['Authentication'],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function destroy(Request $request)
     {
         Auth::guard('web')->logout();
@@ -72,6 +95,17 @@ class LoginController extends ApiController
         return $this->response(null, '已登出。');
     }
 
+    #[OA\Get(
+        path: '/api/auth/me',
+        operationId: 'authMe',
+        summary: 'Get the authenticated user',
+        security: [['sessionCookie' => []]],
+        tags: ['Authentication'],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function me(Request $request)
     {
         return $this->response($this->userPayload($request->user()));

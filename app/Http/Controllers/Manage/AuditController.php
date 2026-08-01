@@ -8,9 +8,32 @@ use App\Models\ManageLoginLog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use OpenApi\Attributes as OA;
 
 class AuditController extends ApiController
 {
+    #[OA\Get(
+        path: '/manage/api/audit/login-failures',
+        operationId: 'manageAuditLoginFailures',
+        summary: 'List failed management login attempts',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Audit'],
+        parameters: [
+            new OA\Parameter(name: 'email', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 255)),
+            new OA\Parameter(name: 'ip', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 45)),
+            new OA\Parameter(name: 'user_public_id', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 20)),
+            new OA\Parameter(name: 'failure_reason', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 80)),
+            new OA\Parameter(name: 'from', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'to', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'locked_only', in: 'query', schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(ref: '#/components/parameters/QueryPage'),
+            new OA\Parameter(ref: '#/components/parameters/QueryPerPage'),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function loginFailures(Request $request)
     {
         $validated = $request->validate([
@@ -59,6 +82,28 @@ class AuditController extends ApiController
         ]);
     }
 
+    #[OA\Get(
+        path: '/manage/api/audit/manage-actions',
+        operationId: 'manageAuditActions',
+        summary: 'List management action audit records',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Audit'],
+        parameters: [
+            new OA\Parameter(name: 'actor', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 255)),
+            new OA\Parameter(name: 'action', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 255)),
+            new OA\Parameter(name: 'target_type', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 80)),
+            new OA\Parameter(name: 'target_public_id', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 255)),
+            new OA\Parameter(name: 'ip', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 45)),
+            new OA\Parameter(name: 'from', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'to', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(ref: '#/components/parameters/QueryPage'),
+            new OA\Parameter(ref: '#/components/parameters/QueryPerPage'),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function actions(Request $request)
     {
         $validated = $request->validate([

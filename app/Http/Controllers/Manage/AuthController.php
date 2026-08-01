@@ -10,9 +10,21 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 
 class AuthController extends ApiController
 {
+    #[OA\Post(
+        path: '/manage/api/login',
+        operationId: 'manageAuthLogin',
+        summary: 'Log in to the management API',
+        tags: ['Manage Authentication'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ManageLoginRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -67,6 +79,17 @@ class AuthController extends ApiController
         ], '管理後台登入成功。');
     }
 
+    #[OA\Post(
+        path: '/manage/api/logout',
+        operationId: 'manageAuthLogout',
+        summary: 'Log out of the management API',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Authentication'],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function destroy(Request $request)
     {
         $request->session()->forget([

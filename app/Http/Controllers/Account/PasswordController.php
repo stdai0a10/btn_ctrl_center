@@ -8,9 +8,22 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 
 class PasswordController extends ApiController
 {
+    #[OA\Put(
+        path: '/api/account/password',
+        operationId: 'accountPasswordUpdate',
+        summary: 'Set or update the account password',
+        security: [['sessionCookie' => []]],
+        tags: ['Account'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PasswordUpdateRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function update(Request $request, ReauthenticationService $reauthenticationService)
     {
         $user = $request->user();

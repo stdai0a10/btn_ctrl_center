@@ -7,9 +7,24 @@ use App\Services\DeviceRuntime\DeviceJobService;
 use App\Services\DeviceRuntime\DeviceTokenService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use OpenApi\Attributes as OA;
 
 class DeviceJobController extends ApiController
 {
+    #[OA\Post(
+        path: '/device/api/devices/{serial_number}/poll',
+        operationId: 'deviceJobsPoll',
+        summary: 'Poll for the next device job',
+        security: [['deviceBearer' => []]],
+        tags: ['Device Jobs'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathSerialNumber')],
+        requestBody: new OA\RequestBody(content: new OA\JsonContent(ref: '#/components/schemas/DevicePollRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 204, description: 'No job is currently available.'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function poll(Request $request, DeviceTokenService $tokens, DeviceJobService $jobs, string $serialNumber)
     {
         $request->validate([
@@ -27,6 +42,19 @@ class DeviceJobController extends ApiController
         return $this->response($this->deviceJobPayload($job));
     }
 
+    #[OA\Post(
+        path: '/device/api/device-jobs/{button_action_job_public_id}/progress',
+        operationId: 'deviceJobsProgress',
+        summary: 'Report device job progress',
+        security: [['deviceBearer' => []]],
+        tags: ['Device Jobs'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathDeviceJob')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/DeviceJobProgressRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function progress(Request $request, DeviceTokenService $tokens, DeviceJobService $jobs, string $buttonActionJobPublicId)
     {
         $validated = $request->validate([
@@ -42,6 +70,19 @@ class DeviceJobController extends ApiController
         return $this->response(['job' => $this->statusPayload($job)]);
     }
 
+    #[OA\Post(
+        path: '/device/api/device-jobs/{button_action_job_public_id}/complete',
+        operationId: 'deviceJobsComplete',
+        summary: 'Complete a device job',
+        security: [['deviceBearer' => []]],
+        tags: ['Device Jobs'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathDeviceJob')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/DeviceJobCompleteRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function complete(Request $request, DeviceTokenService $tokens, DeviceJobService $jobs, string $buttonActionJobPublicId)
     {
         $validated = $request->validate([

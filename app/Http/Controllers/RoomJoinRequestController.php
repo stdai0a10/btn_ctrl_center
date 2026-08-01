@@ -8,13 +8,23 @@ use App\Models\RoomJoinRequest;
 use App\Models\User;
 use App\Services\RoomJoinRequestService;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class RoomJoinRequestController extends ApiController
 {
-    public function __construct(private readonly RoomJoinRequestService $joinRequests)
-    {
-    }
+    public function __construct(private readonly RoomJoinRequestService $joinRequests) {}
 
+    #[OA\Get(
+        path: '/api/room-join-requests',
+        operationId: 'roomJoinRequestsIndex',
+        summary: 'List sent and received room join requests',
+        security: [['sessionCookie' => []]],
+        tags: ['Room Join Requests'],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function index(Request $request)
     {
         $sent = RoomJoinRequest::query()
@@ -41,6 +51,18 @@ class RoomJoinRequestController extends ApiController
         ]);
     }
 
+    #[OA\Post(
+        path: '/api/rooms/{room}/join-requests',
+        operationId: 'roomJoinRequestsStore',
+        summary: 'Request to join a room',
+        security: [['sessionCookie' => []]],
+        tags: ['Room Join Requests'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathRoom')],
+        responses: [
+            new OA\Response(response: 201, ref: '#/components/responses/Created'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function store(Request $request, Room $room)
     {
         $joinRequest = $this->joinRequests->request($room, $request->user());
@@ -48,6 +70,18 @@ class RoomJoinRequestController extends ApiController
         return $this->response($this->payload($joinRequest), '加入申請已送出。', 201);
     }
 
+    #[OA\Post(
+        path: '/api/room-join-requests/{joinRequest}/accept',
+        operationId: 'roomJoinRequestsAccept',
+        summary: 'Accept a room join request',
+        security: [['sessionCookie' => []]],
+        tags: ['Room Join Requests'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathJoinRequest')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function accept(Request $request, RoomJoinRequest $joinRequest)
     {
         $this->joinRequests->accept($joinRequest, $request->user());
@@ -55,6 +89,18 @@ class RoomJoinRequestController extends ApiController
         return $this->response(null, '加入申請已接受。');
     }
 
+    #[OA\Post(
+        path: '/api/room-join-requests/{joinRequest}/ignore',
+        operationId: 'roomJoinRequestsIgnore',
+        summary: 'Ignore a room join request',
+        security: [['sessionCookie' => []]],
+        tags: ['Room Join Requests'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathJoinRequest')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function ignore(Request $request, RoomJoinRequest $joinRequest)
     {
         $joinRequest->loadMissing('room');
@@ -68,6 +114,18 @@ class RoomJoinRequestController extends ApiController
         return $this->response(null, '加入申請已忽略。');
     }
 
+    #[OA\Post(
+        path: '/api/room-join-requests/{joinRequest}/cancel',
+        operationId: 'roomJoinRequestsCancel',
+        summary: 'Cancel a room join request',
+        security: [['sessionCookie' => []]],
+        tags: ['Room Join Requests'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathJoinRequest')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function cancel(Request $request, RoomJoinRequest $joinRequest)
     {
         $this->joinRequests->cancel($joinRequest, $request->user());
@@ -75,6 +133,18 @@ class RoomJoinRequestController extends ApiController
         return $this->response(null, '加入申請已取消。');
     }
 
+    #[OA\Post(
+        path: '/api/room-join-requests/{joinRequest}/restore',
+        operationId: 'roomJoinRequestsRestore',
+        summary: 'Restore an ignored room join request',
+        security: [['sessionCookie' => []]],
+        tags: ['Room Join Requests'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathJoinRequest')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function restore(Request $request, RoomJoinRequest $joinRequest)
     {
         $this->joinRequests->restore($joinRequest, $request->user());
