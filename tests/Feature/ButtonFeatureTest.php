@@ -164,7 +164,7 @@ class ButtonFeatureTest extends TestCase
             ->assertCreated()
             ->json('data.job.public_id');
 
-        $longToken = $this->postJson('/api/device-auth/long-token', [
+        $longToken = $this->postJson('/device/api/device-auth/long-token', [
             'serial_number' => $device->serial_number,
             'secret' => 'runner-secret',
         ])
@@ -172,12 +172,12 @@ class ButtonFeatureTest extends TestCase
             ->json('data.long_token');
 
         $accessToken = $this->withToken($longToken)
-            ->postJson("/api/devices/{$device->serial_number}/access-tokens")
+            ->postJson("/device/api/devices/{$device->serial_number}/access-tokens")
             ->assertOk()
             ->json('data.access_token');
 
         $this->withToken($accessToken)
-            ->postJson("/api/devices/{$device->serial_number}/poll", [
+            ->postJson("/device/api/devices/{$device->serial_number}/poll", [
                 'status' => 'idle',
             ])
             ->assertOk()
@@ -185,7 +185,7 @@ class ButtonFeatureTest extends TestCase
             ->assertJsonPath('data.payload.product_function_code', $function->code);
 
         $this->withToken($accessToken)
-            ->postJson("/api/device-jobs/{$jobPublicId}/complete", [
+            ->postJson("/device/api/device-jobs/{$jobPublicId}/complete", [
                 'status' => 'succeeded',
                 'result' => ['ok' => true],
             ])
@@ -222,7 +222,7 @@ class ButtonFeatureTest extends TestCase
             ->assertJsonPath('data.job.public_id', $jobPublicId)
             ->assertJsonPath('data.job.status', ButtonActionJob::STATUS_QUEUED);
 
-        $longToken = $this->postJson('/api/device-auth/long-token', [
+        $longToken = $this->postJson('/device/api/device-auth/long-token', [
             'serial_number' => $device->serial_number,
             'secret' => 'runner-secret',
         ])
@@ -230,19 +230,19 @@ class ButtonFeatureTest extends TestCase
             ->json('data.long_token');
 
         $accessToken = $this->withToken($longToken)
-            ->postJson("/api/devices/{$device->serial_number}/access-tokens")
+            ->postJson("/device/api/devices/{$device->serial_number}/access-tokens")
             ->assertOk()
             ->json('data.access_token');
 
         $this->withToken($accessToken)
-            ->postJson("/api/devices/{$device->serial_number}/poll", [
+            ->postJson("/device/api/devices/{$device->serial_number}/poll", [
                 'status' => 'idle',
             ])
             ->assertOk()
             ->assertJsonPath('data.job_id', $jobPublicId);
 
         $this->withToken($accessToken)
-            ->postJson("/api/device-jobs/{$jobPublicId}/complete", [
+            ->postJson("/device/api/device-jobs/{$jobPublicId}/complete", [
                 'status' => 'succeeded',
                 'result' => ['ok' => true],
             ])
