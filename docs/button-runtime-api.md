@@ -30,11 +30,11 @@ Device endpoints do not use the normal user session. Devices use JWT Bearer toke
 
 |Method|Path|Token|Purpose|
 |---|---|---|---|
-|POST|`/api/device-auth/long-token`|serial number + secret|Issue a long device JWT.|
-|POST|`/api/devices/{serial_number}/access-tokens`|long JWT|Issue a short access JWT.|
-|POST|`/api/devices/{serial_number}/poll`|access JWT|Poll the next job assigned to this device.|
-|POST|`/api/device-jobs/{button_action_job_public_id}/progress`|access JWT|Report progress for a locked job.|
-|POST|`/api/device-jobs/{button_action_job_public_id}/complete`|access JWT|Complete a locked job.|
+|POST|`/device/api/device-auth/long-token`|serial number + secret|Issue a long device JWT.|
+|POST|`/device/api/devices/{serial_number}/access-tokens`|long JWT|Issue a short access JWT.|
+|POST|`/device/api/devices/{serial_number}/poll`|access JWT|Poll the next job assigned to this device.|
+|POST|`/device/api/device-jobs/{button_action_job_public_id}/progress`|access JWT|Report progress for a locked job.|
+|POST|`/device/api/device-jobs/{button_action_job_public_id}/complete`|access JWT|Complete a locked job.|
 
 Long JWTs can only request access JWTs. Access JWTs can only poll, report progress, and complete jobs.
 
