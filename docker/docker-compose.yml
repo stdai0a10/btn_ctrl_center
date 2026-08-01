@@ -1,0 +1,16 @@
+version: '3.6'
+
+x-service: &base_service
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+services:
+  web:
+    <<: *base_service
+    image: localhost/button_control_center
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../.env.docker
+    ports:
+      - '8080:80'

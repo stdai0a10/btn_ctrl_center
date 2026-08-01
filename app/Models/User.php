@@ -2,16 +2,26 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Auth\AuthAttemptLog;
+use App\Models\Auth\EmailVerificationRequest;
+use App\Models\Auth\PasswordResetRequest;
+use App\Models\Auth\SecurityReauthLog;
+use App\Models\Auth\UserAuthProvider;
+use App\Models\Auth\UserEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -19,9 +29,12 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'public_id',
         'name',
-        'email',
         'password',
+        'primary_email_id',
+        'last_reauth_at',
+        'status',
     ];
 
     /**
@@ -42,8 +55,91 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
+            'last_reauth_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (User $user): void {
+            $user->public_id ??= self::newPublicId();
+        });
+    }
+
+    public static function newPublicId(): string
+    {
+        do {
+            $publicId = Str::upper(Str::random(12));
+        } while (self::query()->where('public_id', $publicId)->exists());
+
+        return $publicId;
+    }
+
+    public function displayName(): string
+    {
+        return $this->name ?: $this->public_id;
+    }
+
+    public function emails(): HasMany
+    {
+        return $this->hasMany(UserEmail::class);
+    }
+
+    public function primaryEmail(): BelongsTo
+    {
+        return $this->belongsTo(UserEmail::class, 'primary_email_id');
+    }
+
+    public function authProviders(): HasMany
+    {
+        return $this->hasMany(UserAuthProvider::class);
+    }
+
+    public function emailVerificationRequests(): HasMany
+    {
+        return $this->hasMany(EmailVerificationRequest::class);
+    }
+
+    public function passwordResetRequests(): HasMany
+    {
+        return $this->hasMany(PasswordResetRequest::class);
+    }
+
+    public function reauthLogs(): HasMany
+    {
+        return $this->hasMany(SecurityReauthLog::class);
+    }
+
+    public function authAttemptLogs(): HasMany
+    {
+        return $this->hasMany(AuthAttemptLog::class, 'account_key', 'public_id');
+    }
+
+    public function rooms(): BelongsToMany
+    {
+        return $this->belongsToMany(Room::class)
+            ->withPivot(['id', 'role', 'joined_at'])
+            ->withTimestamps();
+    }
+
+    public function roomInvitations(): HasMany
+    {
+        return $this->hasMany(RoomInvitation::class, 'invitee_user_id');
+    }
+
+    public function roomJoinRequests(): HasMany
+    {
+        return $this->hasMany(RoomJoinRequest::class, 'requester_user_id');
+    }
+
+    public function buttonPages(): HasMany
+    {
+        return $this->hasMany(ButtonPage::class);
+    }
+
+    public function buttonActionJobs(): HasMany
+    {
+        return $this->hasMany(ButtonActionJob::class);
     }
 }

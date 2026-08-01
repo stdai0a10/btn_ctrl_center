@@ -1,14 +1,16 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
+import AppLayout from '../layouts/AppLayout';
 
 export default function Home({ appName }) {
     return (
         <>
             <Head title="首頁" />
-            <main>
-                <h1>{appName}</h1>
-                <p>Laravel 12 + Inertia + React</p>
-                <Link href="/about">About</Link>
-            </main>
+            <AppLayout>
+                <section className="home-panel">
+                    <h1>{appName}</h1>
+                    <p>Laravel 12 + Inertia + React</p>
+                </section>
+            </AppLayout>
         </>
     )
 };
