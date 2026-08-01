@@ -546,12 +546,86 @@ button:disabled {
 }
 
 .status-pill {
+    display: inline-flex;
+    align-items: center;
+    height: 1.875rem;
+    box-sizing: border-box;
     border: 1px solid var(--line);
     border-radius: 999px;
     padding: 0.35rem 0.65rem;
     color: var(--muted);
     font-size: 0.82rem;
     font-weight: 800;
+}
+
+.status-action-button {
+    display: inline-flex;
+    align-items: center;
+    height: 1.875rem;
+    box-sizing: border-box;
+    border-radius: 999px;
+    padding: 0 0.65rem;
+    font-size: 0.82rem;
+    line-height: 1;
+}
+
+.table-action-trigger {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    box-sizing: border-box;
+    margin-inline: auto;
+    place-items: center;
+    border: 1px solid var(--soft-line);
+    border-radius: 6px;
+    padding: 0;
+    background: #ffffff;
+    color: var(--ink);
+}
+
+.table-action-trigger:hover,
+.table-action-trigger[aria-expanded='true'] {
+    border-color: var(--line);
+    background: #edf5f3;
+}
+
+.table-action-menu-list {
+    position: fixed;
+    z-index: 1000;
+    display: grid;
+    width: 11.5rem;
+    box-sizing: border-box;
+    border: 1px solid var(--soft-line);
+    border-radius: 6px;
+    padding: 0.35rem;
+    background: #ffffff;
+    box-shadow: 0 10px 24px rgba(31, 39, 35, 0.14);
+}
+
+.table-action-menu-list.is-top {
+    transform: translateY(-100%);
+}
+
+.table-action-menu-list button {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    border-radius: 4px;
+    padding: 0.65rem 0.75rem;
+    background: transparent;
+    color: var(--ink);
+    font-size: 0.86rem;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.table-action-menu-list button:hover:not(:disabled) {
+    background: #edf5f3;
+}
+
+.table-action-menu-list button.is-danger {
+    color: var(--danger);
 }
 
 .stat-grid {
@@ -660,6 +734,38 @@ button:disabled {
 
 .manage-filter-form label {
     min-width: 12rem;
+}
+
+.manage-audit-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    align-items: end;
+    gap: 0.75rem;
+}
+
+.manage-audit-filters .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+}
+
+.manage-audit-filters .checkbox-label input {
+    width: auto;
+}
+
+.audit-detail-row,
+.audit-detail-row:hover {
+    background: #f6f8f7 !important;
+    cursor: default !important;
+}
+
+.audit-json {
+    max-width: 100%;
+    margin: 0;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .manage-wide-panel {

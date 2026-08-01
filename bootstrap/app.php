@@ -1,12 +1,16 @@
 <?php
 
+use App\Console\Commands\CleanupExpiredAuthArtifacts;
+use App\Console\Commands\SystemAdmin\AddSystemAdmin;
+use App\Console\Commands\SystemAdmin\ListSystemAdmins;
+use App\Console\Commands\SystemAdmin\RemoveSystemAdmin;
+use App\Http\Middleware\EnsureManageAuthenticated;
+use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\LogManageAction;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use App\Http\Middleware\HandleInertiaRequests;
-use App\Http\Middleware\EnsureManageAuthenticated;
-use App\Http\Middleware\LogManageAction;
-use App\Console\Commands\CleanupExpiredAuthArtifacts;
+use Illuminate\Http\Request;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -20,8 +24,17 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withCommands([
         CleanupExpiredAuthArtifacts::class,
+        AddSystemAdmin::class,
+        ListSystemAdmins::class,
+        RemoveSystemAdmin::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->redirectGuestsTo(
+            fn (Request $request): string => $request->is('manage', 'manage/*')
+                ? route('manage.login')
+                : route('login')
+        );
+
         $middleware->web(append: [
             HandleInertiaRequests::class,
         ]);
