@@ -11,9 +11,22 @@ use App\Support\DeviceSerial;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use OpenApi\Attributes as OA;
 
 class DeviceController extends ApiController
 {
+    #[OA\Post(
+        path: '/manage/api/devices',
+        operationId: 'manageDevicesStore',
+        summary: 'Create a device catalog record',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Devices'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ManageDeviceCreateRequest')),
+        responses: [
+            new OA\Response(response: 201, ref: '#/components/responses/Created'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function store(Request $request, DeviceCatalogService $catalog)
     {
         $validated = $request->validate([
@@ -32,6 +45,26 @@ class DeviceController extends ApiController
         return $this->response($this->devicePayload($device), '設備主檔已建立。', 201);
     }
 
+    #[OA\Get(
+        path: '/manage/api/devices',
+        operationId: 'manageDevicesIndex',
+        summary: 'List devices',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Devices'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/QuerySearch'),
+            new OA\Parameter(name: 'room_public_id', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 26)),
+            new OA\Parameter(name: 'assignment_status', in: 'query', schema: new OA\Schema(type: 'string', enum: ['all', 'assigned', 'unassigned'])),
+            new OA\Parameter(name: 'locked', in: 'query', schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'enabled', in: 'query', schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(ref: '#/components/parameters/QueryPage'),
+            new OA\Parameter(ref: '#/components/parameters/QueryPerPage'),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function index(Request $request)
     {
         $validated = $request->validate([
@@ -76,6 +109,21 @@ class DeviceController extends ApiController
         ]);
     }
 
+    #[OA\Get(
+        path: '/manage/api/devices/{serial_number}',
+        operationId: 'manageDevicesShow',
+        summary: 'Get a device and its transfer history',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Devices'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/PathSerialNumber'),
+            new OA\Parameter(name: 'transfers_page', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function show(Request $request, string $serialNumber)
     {
         $device = Device::query()
@@ -102,6 +150,22 @@ class DeviceController extends ApiController
         ]);
     }
 
+    #[OA\Get(
+        path: '/manage/api/rooms/{room_public_id}/devices',
+        operationId: 'manageRoomDevicesIndex',
+        summary: 'List devices assigned to a room',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Devices'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/PathRoomPublicId'),
+            new OA\Parameter(ref: '#/components/parameters/QueryPage'),
+            new OA\Parameter(ref: '#/components/parameters/QueryPerPage'),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function roomDevices(Request $request, string $roomPublicId)
     {
         $validated = $request->validate([

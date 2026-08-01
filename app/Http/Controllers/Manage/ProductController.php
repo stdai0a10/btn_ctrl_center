@@ -11,9 +11,27 @@ use App\Support\ProductModelNumber;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use OpenApi\Attributes as OA;
 
 class ProductController extends ApiController
 {
+    #[OA\Get(
+        path: '/manage/api/products',
+        operationId: 'manageProductsIndex',
+        summary: 'List products or return product suggestions',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Products'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/QuerySearch'),
+            new OA\Parameter(name: 'suggest', in: 'query', schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(ref: '#/components/parameters/QueryPage'),
+            new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer', enum: [10, 20, 50, 100])),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function index(Request $request)
     {
         $validated = $request->validate([
@@ -61,6 +79,22 @@ class ProductController extends ApiController
         ]);
     }
 
+    #[OA\Get(
+        path: '/manage/api/products/{product_public_id}',
+        operationId: 'manageProductsShow',
+        summary: 'Get a product, its functions, and its devices',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Products'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/PathProductPublicId'),
+            new OA\Parameter(name: 'devices_page', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1)),
+            new OA\Parameter(name: 'devices_per_page', in: 'query', schema: new OA\Schema(type: 'integer', enum: [10, 20, 50, 100])),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function show(Request $request, string $productPublicId)
     {
         $validated = $request->validate([
@@ -104,6 +138,18 @@ class ProductController extends ApiController
         ]);
     }
 
+    #[OA\Post(
+        path: '/manage/api/products',
+        operationId: 'manageProductsStore',
+        summary: 'Create a product',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Products'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ProductRequest')),
+        responses: [
+            new OA\Response(response: 201, ref: '#/components/responses/Created'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function store(Request $request, ProductCatalogService $catalog)
     {
         $validated = $request->validate([
@@ -116,6 +162,19 @@ class ProductController extends ApiController
         return $this->response($this->productPayload($product), '產品主檔已建立。', 201);
     }
 
+    #[OA\Patch(
+        path: '/manage/api/products/{product_public_id}',
+        operationId: 'manageProductsUpdate',
+        summary: 'Update a product',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Products'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathProductPublicId')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ProductRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function update(Request $request, ProductCatalogService $catalog, string $productPublicId)
     {
         $validated = $request->validate([
@@ -129,6 +188,18 @@ class ProductController extends ApiController
         return $this->response($this->productPayload($product), '產品主檔已更新。');
     }
 
+    #[OA\Post(
+        path: '/manage/api/products/{product_public_id}/lock',
+        operationId: 'manageProductsLock',
+        summary: 'Permanently lock a product',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Products'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathProductPublicId')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function lock(Request $request, ProductCatalogService $catalog, string $productPublicId)
     {
         $product = Product::query()->where('public_id', $productPublicId)->firstOrFail();
@@ -137,6 +208,19 @@ class ProductController extends ApiController
         return $this->response($this->productPayload($product), '產品已鎖定。');
     }
 
+    #[OA\Post(
+        path: '/manage/api/products/{product_public_id}/functions',
+        operationId: 'manageProductFunctionsStore',
+        summary: 'Create a product function',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Products'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathProductPublicId')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ProductFunctionRequest')),
+        responses: [
+            new OA\Response(response: 201, ref: '#/components/responses/Created'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function storeFunction(Request $request, ProductCatalogService $catalog, string $productPublicId)
     {
         $validated = $request->validate([
@@ -149,6 +233,19 @@ class ProductController extends ApiController
         return $this->response($this->functionPayload($function), '產品功能已建立。', 201);
     }
 
+    #[OA\Patch(
+        path: '/manage/api/product-functions/{code}',
+        operationId: 'manageProductFunctionsUpdate',
+        summary: 'Update a product function',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Products'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathProductFunctionCode')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ProductFunctionRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function updateFunction(Request $request, ProductCatalogService $catalog, string $code)
     {
         $validated = $request->validate([
@@ -161,6 +258,18 @@ class ProductController extends ApiController
         return $this->response($this->functionPayload($function), '產品功能已更新。');
     }
 
+    #[OA\Delete(
+        path: '/manage/api/product-functions/{code}',
+        operationId: 'manageProductFunctionsDestroy',
+        summary: 'Delete a product function',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Products'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathProductFunctionCode')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function destroyFunction(Request $request, ProductCatalogService $catalog, string $code)
     {
         $function = ProductFunction::query()->where('code', $code)->firstOrFail();

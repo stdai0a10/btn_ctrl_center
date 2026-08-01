@@ -8,13 +8,23 @@ use App\Models\RoomInvitation;
 use App\Models\User;
 use App\Services\RoomInvitationService;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class RoomInvitationController extends ApiController
 {
-    public function __construct(private readonly RoomInvitationService $invitations)
-    {
-    }
+    public function __construct(private readonly RoomInvitationService $invitations) {}
 
+    #[OA\Get(
+        path: '/api/room-invitations',
+        operationId: 'roomInvitationsIndex',
+        summary: 'List received and sent room invitations',
+        security: [['sessionCookie' => []]],
+        tags: ['Room Invitations'],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function index(Request $request)
     {
         $received = RoomInvitation::query()
@@ -41,6 +51,19 @@ class RoomInvitationController extends ApiController
         ]);
     }
 
+    #[OA\Post(
+        path: '/api/rooms/{room}/invitations',
+        operationId: 'roomInvitationsStore',
+        summary: 'Invite a user to a room',
+        security: [['sessionCookie' => []]],
+        tags: ['Room Invitations'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathRoom')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/RoomInvitationRequest')),
+        responses: [
+            new OA\Response(response: 201, ref: '#/components/responses/Created'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function store(Request $request, Room $room)
     {
         $this->authorize('invite', $room);
@@ -55,6 +78,18 @@ class RoomInvitationController extends ApiController
         return $this->response($this->payload($invitation), '邀請已送出。', 201);
     }
 
+    #[OA\Post(
+        path: '/api/room-invitations/{invitation}/accept',
+        operationId: 'roomInvitationsAccept',
+        summary: 'Accept a room invitation',
+        security: [['sessionCookie' => []]],
+        tags: ['Room Invitations'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathInvitation')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function accept(Request $request, RoomInvitation $invitation)
     {
         $this->invitations->accept($invitation, $request->user());
@@ -62,6 +97,18 @@ class RoomInvitationController extends ApiController
         return $this->response(null, '邀請已接受。');
     }
 
+    #[OA\Post(
+        path: '/api/room-invitations/{invitation}/ignore',
+        operationId: 'roomInvitationsIgnore',
+        summary: 'Ignore a room invitation',
+        security: [['sessionCookie' => []]],
+        tags: ['Room Invitations'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathInvitation')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function ignore(Request $request, RoomInvitation $invitation)
     {
         $this->invitations->ignore($invitation, $request->user());
@@ -69,6 +116,18 @@ class RoomInvitationController extends ApiController
         return $this->response(null, '邀請已忽略。');
     }
 
+    #[OA\Post(
+        path: '/api/room-invitations/{invitation}/cancel',
+        operationId: 'roomInvitationsCancel',
+        summary: 'Cancel a room invitation',
+        security: [['sessionCookie' => []]],
+        tags: ['Room Invitations'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathInvitation')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function cancel(Request $request, RoomInvitation $invitation)
     {
         $invitation->loadMissing('room');

@@ -6,13 +6,23 @@ use App\Models\Room;
 use App\Models\RoomJoinRequest;
 use App\Services\RoomService;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class RoomController extends ApiController
 {
-    public function __construct(private readonly RoomService $rooms)
-    {
-    }
+    public function __construct(private readonly RoomService $rooms) {}
 
+    #[OA\Get(
+        path: '/api/rooms',
+        operationId: 'roomsIndex',
+        summary: 'List rooms for the authenticated user',
+        security: [['sessionCookie' => []]],
+        tags: ['Rooms'],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function index(Request $request)
     {
         $this->authorize('viewAny', Room::class);
@@ -27,6 +37,18 @@ class RoomController extends ApiController
         return $this->response($rooms);
     }
 
+    #[OA\Post(
+        path: '/api/rooms',
+        operationId: 'roomsStore',
+        summary: 'Create a room',
+        security: [['sessionCookie' => []]],
+        tags: ['Rooms'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/RoomRequest')),
+        responses: [
+            new OA\Response(response: 201, ref: '#/components/responses/Created'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function store(Request $request)
     {
         $this->authorize('create', Room::class);
@@ -40,6 +62,18 @@ class RoomController extends ApiController
         return $this->response($this->payload($room, $request), '房間已建立。', 201);
     }
 
+    #[OA\Get(
+        path: '/api/rooms/{room}',
+        operationId: 'roomsShow',
+        summary: 'Get a room',
+        security: [['sessionCookie' => []]],
+        tags: ['Rooms'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathRoom')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function show(Request $request, Room $room)
     {
         if (! $room->isMember($request->user())) {
@@ -67,6 +101,32 @@ class RoomController extends ApiController
         return $this->response($this->payload($room->load(['members.primaryEmail']), $request, true));
     }
 
+    #[OA\Put(
+        path: '/api/rooms/{room}',
+        operationId: 'roomsReplace',
+        summary: 'Replace room details',
+        security: [['sessionCookie' => []]],
+        tags: ['Rooms'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathRoom')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/RoomRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
+    #[OA\Patch(
+        path: '/api/rooms/{room}',
+        operationId: 'roomsUpdate',
+        summary: 'Update room details',
+        security: [['sessionCookie' => []]],
+        tags: ['Rooms'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathRoom')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/RoomRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function update(Request $request, Room $room)
     {
         $this->authorize('update', $room);
@@ -80,6 +140,18 @@ class RoomController extends ApiController
         return $this->response($this->payload($room, $request), '房間已更新。');
     }
 
+    #[OA\Delete(
+        path: '/api/rooms/{room}',
+        operationId: 'roomsDestroy',
+        summary: 'Delete a room',
+        security: [['sessionCookie' => []]],
+        tags: ['Rooms'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathRoom')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function destroy(Request $request, Room $room)
     {
         $this->authorize('delete', $room);

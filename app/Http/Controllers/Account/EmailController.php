@@ -9,15 +9,27 @@ use App\Services\Auth\ReauthenticationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 
 class EmailController extends ApiController
 {
+    #[OA\Post(
+        path: '/api/account/email/change-request',
+        operationId: 'accountEmailChangeRequest',
+        summary: 'Request an account email change',
+        security: [['sessionCookie' => []]],
+        tags: ['Account'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/EmailRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function store(
         Request $request,
         EmailVerificationService $emailVerificationService,
         ReauthenticationService $reauthenticationService,
-    )
-    {
+    ) {
         $reauthenticationService->assertFresh($request->user());
 
         $validated = $request->validate([

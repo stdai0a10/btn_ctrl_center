@@ -9,9 +9,28 @@ use App\Support\DeviceSerial;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use OpenApi\Attributes as OA;
 
 class DeviceRuntimeController extends ApiController
 {
+    #[OA\Get(
+        path: '/manage/api/device-runtime',
+        operationId: 'manageDeviceRuntimeIndex',
+        summary: 'List device runtime state',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Device Runtime'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/QuerySearch'),
+            new OA\Parameter(name: 'runner_status', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 50)),
+            new OA\Parameter(name: 'runtime_disabled', in: 'query', schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(ref: '#/components/parameters/QueryPage'),
+            new OA\Parameter(ref: '#/components/parameters/QueryPerPage'),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function index(Request $request)
     {
         $validated = $request->validate([
@@ -54,6 +73,18 @@ class DeviceRuntimeController extends ApiController
         ]);
     }
 
+    #[OA\Post(
+        path: '/manage/api/device-runtime/devices/{serial_number}/disable',
+        operationId: 'manageDeviceRuntimeDisable',
+        summary: 'Disable a device runtime',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Device Runtime'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathSerialNumber')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function disable(Request $request, DeviceRuntimeService $runtime, string $serialNumber)
     {
         $device = $this->findDevice($serialNumber);
@@ -61,6 +92,18 @@ class DeviceRuntimeController extends ApiController
         return $this->response($this->deviceRuntimePayload($runtime->disable($request, $device)), '設備 runtime 已停用。');
     }
 
+    #[OA\Post(
+        path: '/manage/api/device-runtime/devices/{serial_number}/enable',
+        operationId: 'manageDeviceRuntimeEnable',
+        summary: 'Enable a device runtime',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Device Runtime'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathSerialNumber')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function enable(Request $request, DeviceRuntimeService $runtime, string $serialNumber)
     {
         $device = $this->findDevice($serialNumber);
@@ -68,6 +111,18 @@ class DeviceRuntimeController extends ApiController
         return $this->response($this->deviceRuntimePayload($runtime->enable($request, $device)), '設備 runtime 已啟用。');
     }
 
+    #[OA\Post(
+        path: '/manage/api/device-runtime/devices/{serial_number}/revoke-tokens',
+        operationId: 'manageDeviceRuntimeRevokeTokens',
+        summary: 'Revoke all device JWTs',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Device Runtime'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathSerialNumber')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function revokeTokens(Request $request, DeviceRuntimeService $runtime, string $serialNumber)
     {
         $device = $this->findDevice($serialNumber);

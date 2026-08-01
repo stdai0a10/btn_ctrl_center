@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Support\ManagementRbac;
 use Database\Seeders\ManagementRbacSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class ManageMiddlewareTest extends TestCase
@@ -19,12 +20,23 @@ class ManageMiddlewareTest extends TestCase
         $this->seed(ManagementRbacSeeder::class);
     }
 
+    public function test_manage_api_uses_a_single_web_session_stack(): void
+    {
+        $middleware = Route::getRoutes()
+            ->getByName('manage.api.dashboard')
+            ->middleware();
+
+        $this->assertContains('web', $middleware);
+        $this->assertNotContains('api', $middleware);
+    }
+
     public function test_guests_and_users_without_manage_verification_cannot_access_management_routes(): void
     {
         $this->get('/manage')->assertRedirect('/manage/login');
         $this->get('/manage/service-managers')->assertRedirect('/manage/login');
         $this->get('/manage/devices')->assertRedirect('/manage/login');
         $this->get('/manage/audit')->assertRedirect('/manage/login');
+        $this->get('/manage/api/service-managers')->assertRedirect('/manage/login');
         $this->getJson('/manage/api/service-managers')->assertUnauthorized();
 
         $admin = User::factory()->create();

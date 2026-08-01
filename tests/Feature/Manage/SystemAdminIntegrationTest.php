@@ -6,8 +6,8 @@ use App\Models\Auth\UserEmail;
 use App\Models\Device;
 use App\Models\ManageActionLog;
 use App\Models\ManageLoginLog;
-use App\Models\User;
 use App\Models\Room;
+use App\Models\User;
 use App\Support\ManagementRbac;
 use Database\Seeders\ManagementRbacSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -47,6 +47,25 @@ class SystemAdminIntegrationTest extends TestCase
         ] as $path) {
             $this->get($path)->assertOk();
         }
+    }
+
+    public function test_manage_api_request_keeps_the_browser_session_valid(): void
+    {
+        $manager = $this->userWithEmail('session-manager@example.com');
+        $manager->assignRole(ManagementRbac::SERVICE_MANAGER_ROLE);
+
+        $this->withHeader('Referer', 'http://localhost/manage/login')
+            ->postJson('/manage/api/login', [
+                'email' => 'session-manager@example.com',
+                'password' => 'password-password',
+            ])
+            ->assertOk();
+
+        $this->withHeader('Referer', 'http://localhost/manage')
+            ->getJson('/manage/api/dashboard')
+            ->assertOk();
+
+        $this->get('/manage/rooms')->assertOk();
     }
 
     public function test_service_manager_cannot_manage_roles_or_view_audit_but_dual_role_user_can(): void

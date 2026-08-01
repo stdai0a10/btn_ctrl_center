@@ -6,9 +6,26 @@ use App\Http\Controllers\ApiController;
 use App\Models\Room;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class RoomController extends ApiController
 {
+    #[OA\Get(
+        path: '/manage/api/rooms',
+        operationId: 'manageRoomsIndex',
+        summary: 'List rooms',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Rooms'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/QuerySearch'),
+            new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string', enum: ['active', 'deleted'])),
+            new OA\Parameter(ref: '#/components/parameters/QueryPage'),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function index(Request $request)
     {
         $validated = $request->validate([
@@ -57,6 +74,18 @@ class RoomController extends ApiController
         ]);
     }
 
+    #[OA\Get(
+        path: '/manage/api/rooms/{room_public_id}',
+        operationId: 'manageRoomsShow',
+        summary: 'Get a room',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Rooms'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathRoomPublicId')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function show(string $roomPublicId)
     {
         $room = $this->findRoom($roomPublicId);
@@ -67,6 +96,18 @@ class RoomController extends ApiController
         ]);
     }
 
+    #[OA\Get(
+        path: '/manage/api/rooms/{room_public_id}/users',
+        operationId: 'manageRoomsUsers',
+        summary: 'List users in a room',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Rooms'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathRoomPublicId')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function users(string $roomPublicId)
     {
         return $this->response($this->membersPayload($this->findRoom($roomPublicId)));

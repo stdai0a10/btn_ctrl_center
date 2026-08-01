@@ -6,13 +6,24 @@ use App\Models\Device;
 use App\Models\Room;
 use App\Services\DeviceService;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class DeviceController extends ApiController
 {
-    public function __construct(private readonly DeviceService $devices)
-    {
-    }
+    public function __construct(private readonly DeviceService $devices) {}
 
+    #[OA\Get(
+        path: '/api/rooms/{room}/devices',
+        operationId: 'roomDevicesIndex',
+        summary: 'List devices assigned to a room',
+        security: [['sessionCookie' => []]],
+        tags: ['Devices'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathRoom')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function index(Request $request, Room $room)
     {
         $this->authorize('view', $room);
@@ -26,6 +37,19 @@ class DeviceController extends ApiController
         return $this->response($devices);
     }
 
+    #[OA\Post(
+        path: '/api/rooms/{room}/devices',
+        operationId: 'roomDevicesStore',
+        summary: 'Assign a device to a room',
+        security: [['sessionCookie' => []]],
+        tags: ['Devices'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathRoom')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/RoomDeviceCreateRequest')),
+        responses: [
+            new OA\Response(response: 201, ref: '#/components/responses/Created'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function store(Request $request, Room $room)
     {
         $this->authorize('manageDevices', $room);
@@ -49,6 +73,22 @@ class DeviceController extends ApiController
         return $this->response($this->payload($device), '設備已加入房間。', 201);
     }
 
+    #[OA\Patch(
+        path: '/api/rooms/{room}/devices/{device}',
+        operationId: 'roomDevicesUpdate',
+        summary: 'Update a room device',
+        security: [['sessionCookie' => []]],
+        tags: ['Devices'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/PathRoom'),
+            new OA\Parameter(ref: '#/components/parameters/PathDevice'),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/RoomDeviceUpdateRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function update(Request $request, Room $room, Device $device)
     {
         $this->authorize('manageDevices', $room);
@@ -62,6 +102,21 @@ class DeviceController extends ApiController
         return $this->response($this->payload($device), '設備已更新。');
     }
 
+    #[OA\Delete(
+        path: '/api/rooms/{room}/devices/{device}',
+        operationId: 'roomDevicesDestroy',
+        summary: 'Remove a device from a room',
+        security: [['sessionCookie' => []]],
+        tags: ['Devices'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/PathRoom'),
+            new OA\Parameter(ref: '#/components/parameters/PathDevice'),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function destroy(Request $request, Room $room, Device $device)
     {
         $this->authorize('manageDevices', $room);
@@ -71,6 +126,21 @@ class DeviceController extends ApiController
         return $this->response(null, '設備已移除。');
     }
 
+    #[OA\Post(
+        path: '/api/rooms/{room}/devices/{device}/lock',
+        operationId: 'roomDevicesLock',
+        summary: 'Lock a room device',
+        security: [['sessionCookie' => []]],
+        tags: ['Devices'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/PathRoom'),
+            new OA\Parameter(ref: '#/components/parameters/PathDevice'),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function lock(Request $request, Room $room, Device $device)
     {
         $this->authorize('manageDevices', $room);
@@ -80,6 +150,21 @@ class DeviceController extends ApiController
         return $this->response($this->payload($device), '設備已上鎖。');
     }
 
+    #[OA\Post(
+        path: '/api/rooms/{room}/devices/{device}/unlock',
+        operationId: 'roomDevicesUnlock',
+        summary: 'Unlock a room device',
+        security: [['sessionCookie' => []]],
+        tags: ['Devices'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/PathRoom'),
+            new OA\Parameter(ref: '#/components/parameters/PathDevice'),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function unlock(Request $request, Room $room, Device $device)
     {
         $this->authorize('manageDevices', $room);
@@ -89,6 +174,21 @@ class DeviceController extends ApiController
         return $this->response($this->payload($device), '設備已解鎖。');
     }
 
+    #[OA\Post(
+        path: '/api/rooms/{room}/devices/{device}/enable',
+        operationId: 'roomDevicesEnable',
+        summary: 'Enable a room device',
+        security: [['sessionCookie' => []]],
+        tags: ['Devices'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/PathRoom'),
+            new OA\Parameter(ref: '#/components/parameters/PathDevice'),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function enable(Request $request, Room $room, Device $device)
     {
         $this->authorize('manageDevices', $room);
@@ -98,6 +198,21 @@ class DeviceController extends ApiController
         return $this->response($this->payload($device), '設備已啟用。');
     }
 
+    #[OA\Post(
+        path: '/api/rooms/{room}/devices/{device}/disable',
+        operationId: 'roomDevicesDisable',
+        summary: 'Disable a room device',
+        security: [['sessionCookie' => []]],
+        tags: ['Devices'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/PathRoom'),
+            new OA\Parameter(ref: '#/components/parameters/PathDevice'),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function disable(Request $request, Room $room, Device $device)
     {
         $this->authorize('manageDevices', $room);
