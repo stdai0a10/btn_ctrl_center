@@ -1,23 +1,26 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Account\EmailController;
 use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\Account\ProfileController;
 use App\Http\Controllers\Account\ProviderBindingController;
-use App\Http\Controllers\DeviceController;
-use App\Http\Controllers\RoomController;
-use App\Http\Controllers\RoomInvitationController;
-use App\Http\Controllers\RoomMemberController;
-use App\Http\Controllers\RoomJoinRequestController;
-use App\Http\Controllers\Security\ReauthController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LineAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\ButtonActionController;
+use App\Http\Controllers\ButtonPageController;
+use App\Http\Controllers\ButtonTargetController;
+use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\RoomController;
+use App\Http\Controllers\RoomInvitationController;
+use App\Http\Controllers\RoomJoinRequestController;
+use App\Http\Controllers\RoomMemberController;
+use App\Http\Controllers\Security\ReauthController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/health', fn () => response()->json([
     'message' => 'success',
@@ -41,7 +44,6 @@ Route::post('/auth/reset-password', [ResetPasswordController::class, 'store']);
 Route::get('/auth/line/redirect', [LineAuthController::class, 'redirect'])->middleware('web')->name('auth.line.redirect');
 Route::get('/auth/line/callback', [LineAuthController::class, 'callback'])->middleware('web')->name('auth.line.callback');
 Route::post('/auth/line/liff', [LineAuthController::class, 'liff']);
-
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/auth/logout', [LoginController::class, 'destroy']);
     Route::get('/auth/me', [LoginController::class, 'me']);
@@ -74,6 +76,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/room-join-requests/{joinRequest}/accept', [RoomJoinRequestController::class, 'accept']);
     Route::post('/room-join-requests/{joinRequest}/ignore', [RoomJoinRequestController::class, 'ignore']);
     Route::post('/room-join-requests/{joinRequest}/cancel', [RoomJoinRequestController::class, 'cancel']);
+    Route::post('/room-join-requests/{joinRequest}/restore', [RoomJoinRequestController::class, 'restore']);
 
     Route::get('/rooms/{room}/devices', [DeviceController::class, 'index']);
     Route::post('/rooms/{room}/devices', [DeviceController::class, 'store']);
@@ -81,4 +84,17 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::delete('/rooms/{room}/devices/{device}', [DeviceController::class, 'destroy']);
     Route::post('/rooms/{room}/devices/{device}/lock', [DeviceController::class, 'lock']);
     Route::post('/rooms/{room}/devices/{device}/unlock', [DeviceController::class, 'unlock']);
+    Route::post('/rooms/{room}/devices/{device}/enable', [DeviceController::class, 'enable']);
+    Route::post('/rooms/{room}/devices/{device}/disable', [DeviceController::class, 'disable']);
+
+    Route::get('/button-pages', [ButtonPageController::class, 'index']);
+    Route::post('/button-pages', [ButtonPageController::class, 'store']);
+    Route::patch('/button-pages/{buttonPage}', [ButtonPageController::class, 'update']);
+    Route::put('/button-pages/{buttonPage}/layout', [ButtonPageController::class, 'saveLayout']);
+    Route::delete('/button-pages/{buttonPage}', [ButtonPageController::class, 'destroy']);
+    Route::put('/button-pages/order', [ButtonPageController::class, 'order']);
+    Route::get('/buttons/selectable-targets', ButtonTargetController::class);
+    Route::post('/button-actions', [ButtonActionController::class, 'store']);
+    Route::get('/button-actions/current', [ButtonActionController::class, 'current']);
+    Route::get('/button-actions/{buttonActionJob}', [ButtonActionController::class, 'show']);
 });

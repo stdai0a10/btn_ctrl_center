@@ -2,7 +2,11 @@
 
 use App\Http\Controllers\Manage\AuditController as ManageAuditController;
 use App\Http\Controllers\Manage\AuthController as ManageAuthController;
+use App\Http\Controllers\Manage\ButtonJobController as ManageButtonJobController;
 use App\Http\Controllers\Manage\DashboardController as ManageDashboardController;
+use App\Http\Controllers\Manage\DeviceController as ManageDeviceController;
+use App\Http\Controllers\Manage\DeviceRuntimeController as ManageDeviceRuntimeController;
+use App\Http\Controllers\Manage\ProductController as ManageProductController;
 use App\Http\Controllers\Manage\RoomController as ManageRoomController;
 use App\Http\Controllers\Manage\ServiceManagerController as ManageServiceManagerController;
 use App\Http\Controllers\Manage\UserController as ManageUserController;
@@ -29,6 +33,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/account/providers', fn () => Inertia::render('Account/Providers'))->name('account.providers');
     Route::get('/reauth', fn () => Inertia::render('Account/Reauth'))->name('account.reauth');
     Route::get('/rooms', fn () => Inertia::render('Rooms/Index'))->name('rooms.index');
+    Route::get('/buttons', fn () => Inertia::render('Buttons/Index'))->name('buttons.index');
     Route::get('/rooms/{room}', fn (string $room) => Inertia::render('Rooms/Show', [
         'roomPublicId' => $room,
     ]))->name('rooms.show');
@@ -56,6 +61,31 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
         ]))
             ->middleware('permission:manage.rooms.detail')
             ->name('rooms.show');
+        Route::get('/devices', fn () => Inertia::render('Manage/Devices/Index'))
+            ->middleware('permission:manage.devices.view')
+            ->name('devices.index');
+        Route::get('/devices/create', fn () => Inertia::render('Manage/Devices/Create'))
+            ->middleware('permission:manage.devices.create')
+            ->name('devices.create');
+        Route::get('/devices/{serial_number}', fn (string $serialNumber) => Inertia::render('Manage/Devices/Show', [
+            'serialNumber' => $serialNumber,
+        ]))
+            ->middleware('permission:manage.devices.detail')
+            ->name('devices.show');
+        Route::get('/device-runtime', fn () => Inertia::render('Manage/DeviceRuntime/Index'))
+            ->middleware('permission:manage.device_runtime.view')
+            ->name('device-runtime.index');
+        Route::get('/products', fn () => Inertia::render('Manage/Products/Index'))
+            ->middleware('permission:manage.products.view')
+            ->name('products.index');
+        Route::get('/products/create', fn () => Inertia::render('Manage/Products/Create'))
+            ->middleware('permission:manage.products.create')
+            ->name('products.create');
+        Route::get('/products/{product_public_id}', fn (string $productPublicId) => Inertia::render('Manage/Products/Show', [
+            'productPublicId' => $productPublicId,
+        ]))
+            ->middleware('permission:manage.products.detail')
+            ->name('products.show');
         Route::get('/service-managers', fn () => Inertia::render('Manage/ServiceManagers/Index'))
             ->middleware('permission:manage.service_managers.view')
             ->name('service-managers.index');
@@ -104,6 +134,60 @@ Route::prefix('manage')->name('manage.')->group(function (): void {
             Route::get('/rooms/{room_public_id}/users', [ManageRoomController::class, 'users'])
                 ->middleware('permission:manage.rooms.detail')
                 ->name('rooms.users');
+            Route::get('/rooms/{room_public_id}/devices', [ManageDeviceController::class, 'roomDevices'])
+                ->middleware(['permission:manage.rooms.detail', 'permission:manage.devices.view'])
+                ->name('rooms.devices');
+            Route::get('/devices', [ManageDeviceController::class, 'index'])
+                ->middleware('permission:manage.devices.view')
+                ->name('devices.index');
+            Route::post('/devices', [ManageDeviceController::class, 'store'])
+                ->middleware('permission:manage.devices.create')
+                ->name('devices.store');
+            Route::get('/devices/{serial_number}', [ManageDeviceController::class, 'show'])
+                ->middleware('permission:manage.devices.detail')
+                ->name('devices.show');
+            Route::get('/device-runtime', [ManageDeviceRuntimeController::class, 'index'])
+                ->middleware('permission:manage.device_runtime.view')
+                ->name('device-runtime.index');
+            Route::post('/device-runtime/devices/{serial_number}/disable', [ManageDeviceRuntimeController::class, 'disable'])
+                ->middleware('permission:manage.device_runtime.manage')
+                ->name('device-runtime.disable');
+            Route::post('/device-runtime/devices/{serial_number}/enable', [ManageDeviceRuntimeController::class, 'enable'])
+                ->middleware('permission:manage.device_runtime.manage')
+                ->name('device-runtime.enable');
+            Route::post('/device-runtime/devices/{serial_number}/revoke-tokens', [ManageDeviceRuntimeController::class, 'revokeTokens'])
+                ->middleware('permission:manage.device_runtime.manage')
+                ->name('device-runtime.revoke-tokens');
+            Route::get('/button-jobs', [ManageButtonJobController::class, 'index'])
+                ->middleware('permission:manage.button_jobs.view')
+                ->name('button-jobs.index');
+            Route::post('/button-jobs/{button_action_job_public_id}/cancel', [ManageButtonJobController::class, 'cancel'])
+                ->middleware('permission:manage.button_jobs.cancel')
+                ->name('button-jobs.cancel');
+            Route::get('/products', [ManageProductController::class, 'index'])
+                ->middleware('permission:manage.products.view')
+                ->name('products.index');
+            Route::post('/products', [ManageProductController::class, 'store'])
+                ->middleware('permission:manage.products.create')
+                ->name('products.store');
+            Route::get('/products/{product_public_id}', [ManageProductController::class, 'show'])
+                ->middleware('permission:manage.products.detail')
+                ->name('products.show');
+            Route::patch('/products/{product_public_id}', [ManageProductController::class, 'update'])
+                ->middleware('permission:manage.products.update')
+                ->name('products.update');
+            Route::post('/products/{product_public_id}/lock', [ManageProductController::class, 'lock'])
+                ->middleware('permission:manage.products.lock')
+                ->name('products.lock');
+            Route::post('/products/{product_public_id}/functions', [ManageProductController::class, 'storeFunction'])
+                ->middleware('permission:manage.product_functions.create')
+                ->name('products.functions.store');
+            Route::patch('/product-functions/{code}', [ManageProductController::class, 'updateFunction'])
+                ->middleware('permission:manage.product_functions.update')
+                ->name('product-functions.update');
+            Route::delete('/product-functions/{code}', [ManageProductController::class, 'destroyFunction'])
+                ->middleware('permission:manage.product_functions.delete')
+                ->name('product-functions.destroy');
             Route::get('/service-managers', [ManageServiceManagerController::class, 'index'])
                 ->middleware('permission:manage.service_managers.view')
                 ->name('service-managers.index');

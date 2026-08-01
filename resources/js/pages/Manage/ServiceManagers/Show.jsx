@@ -48,8 +48,10 @@ export default function ServiceManagerShow({ userPublicId }) {
             <ManageLayout>
                 <section className="page-header">
                     <p className="eyebrow">Service Manager Detail</p>
-                    <h1>{user?.display_name ?? userPublicId}</h1>
-                    <Link className="text-link" href="/manage/service-managers">返回服務管理員一覽</Link>
+                    <div className="manage-detail-header">
+                        <h1>{user?.display_name ?? userPublicId}</h1>
+                        <Link className="button-link manage-header-action" href="/manage/service-managers">返回服務管理員一覽</Link>
+                    </div>
                 </section>
 
                 {loading && <p className="muted">載入中...</p>}

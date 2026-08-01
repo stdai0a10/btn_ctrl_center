@@ -23,6 +23,7 @@ class ManageMiddlewareTest extends TestCase
     {
         $this->get('/manage')->assertRedirect('/manage/login');
         $this->get('/manage/service-managers')->assertRedirect('/manage/login');
+        $this->get('/manage/devices')->assertRedirect('/manage/login');
         $this->get('/manage/audit')->assertRedirect('/manage/login');
         $this->getJson('/manage/api/service-managers')->assertUnauthorized();
 
@@ -105,6 +106,58 @@ class ManageMiddlewareTest extends TestCase
             ->withSession($this->manageSession($user))
             ->get('/manage/audit/manage-actions')
             ->assertForbidden();
+    }
+
+    public function test_device_pages_require_specific_permissions(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(['manage.access', 'manage.devices.view']);
+
+        $this->actingAs($user)
+            ->withSession($this->manageSession($user))
+            ->get('/manage/devices')
+            ->assertOk();
+        $this->actingAs($user)
+            ->withSession($this->manageSession($user))
+            ->get('/manage/devices/create')
+            ->assertForbidden();
+
+        $user->givePermissionTo('manage.devices.create');
+
+        $this->actingAs($user)
+            ->withSession($this->manageSession($user))
+            ->get('/manage/devices/create')
+            ->assertOk();
+    }
+
+    public function test_device_runtime_routes_require_specific_permissions(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(['manage.access', 'manage.devices.view']);
+
+        $this->actingAs($user)
+            ->withSession($this->manageSession($user))
+            ->get('/manage/device-runtime')
+            ->assertForbidden();
+        $this->actingAs($user)
+            ->withSession($this->manageSession($user))
+            ->getJson('/manage/api/device-runtime')
+            ->assertForbidden();
+
+        $user->givePermissionTo(['manage.device_runtime.view', 'manage.button_jobs.view']);
+
+        $this->actingAs($user)
+            ->withSession($this->manageSession($user))
+            ->get('/manage/device-runtime')
+            ->assertOk();
+        $this->actingAs($user)
+            ->withSession($this->manageSession($user))
+            ->getJson('/manage/api/device-runtime')
+            ->assertOk();
+        $this->actingAs($user)
+            ->withSession($this->manageSession($user))
+            ->getJson('/manage/api/button-jobs')
+            ->assertOk();
     }
 
     /**

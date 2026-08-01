@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('auth:cleanup-expired')->hourly();
+Schedule::command('button:cleanup-runtime')->everyMinute();

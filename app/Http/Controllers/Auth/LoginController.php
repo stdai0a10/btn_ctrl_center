@@ -110,7 +110,7 @@ class LoginController extends ApiController
         $intended = $request->session()->pull('url.intended');
         $redirect = is_string($intended) && $intended !== ''
             ? $intended
-            : $request->input('redirect', '/');
+            : $request->input('redirect', '/buttons');
 
         if (! is_string($redirect) || $redirect === '') {
             return '/';

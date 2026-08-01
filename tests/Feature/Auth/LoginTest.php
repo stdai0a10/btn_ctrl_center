@@ -44,7 +44,7 @@ class LoginTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_login_returns_requested_redirect_or_home_by_default(): void
+    public function test_login_returns_requested_redirect_or_buttons_by_default(): void
     {
         $user = User::factory()->create([
             'password' => 'password-password',
@@ -73,7 +73,7 @@ class LoginTest extends TestCase
             'email' => 'redirect@example.com',
             'password' => 'password-password',
         ])->assertOk()
-            ->assertJsonPath('data.redirect_to', '/');
+            ->assertJsonPath('data.redirect_to', '/buttons');
     }
 
     public function test_login_returns_session_intended_url_for_protected_pages(): void

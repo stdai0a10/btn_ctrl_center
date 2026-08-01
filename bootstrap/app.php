@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\CleanupButtonRuntime;
 use App\Console\Commands\CleanupExpiredAuthArtifacts;
 use App\Console\Commands\SystemAdmin\AddSystemAdmin;
 use App\Console\Commands\SystemAdmin\ListSystemAdmins;
@@ -11,6 +12,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -21,8 +23,14 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        then: function (): void {
+            Route::middleware('api')
+                ->prefix('device/api')
+                ->group(base_path('routes/device.php'));
+        },
     )
     ->withCommands([
+        CleanupButtonRuntime::class,
         CleanupExpiredAuthArtifacts::class,
         AddSystemAdmin::class,
         ListSystemAdmins::class,
