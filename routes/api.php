@@ -1,28 +1,26 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Account\EmailController;
 use App\Http\Controllers\Account\PasswordController;
 use App\Http\Controllers\Account\ProfileController;
 use App\Http\Controllers\Account\ProviderBindingController;
-use App\Http\Controllers\DeviceController;
-use App\Http\Controllers\ButtonActionController;
-use App\Http\Controllers\ButtonPageController;
-use App\Http\Controllers\ButtonTargetController;
-use App\Http\Controllers\DeviceAuthController;
-use App\Http\Controllers\DeviceJobController;
-use App\Http\Controllers\RoomController;
-use App\Http\Controllers\RoomInvitationController;
-use App\Http\Controllers\RoomMemberController;
-use App\Http\Controllers\RoomJoinRequestController;
-use App\Http\Controllers\Security\ReauthController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LineAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\ButtonActionController;
+use App\Http\Controllers\ButtonPageController;
+use App\Http\Controllers\ButtonTargetController;
+use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\RoomController;
+use App\Http\Controllers\RoomInvitationController;
+use App\Http\Controllers\RoomJoinRequestController;
+use App\Http\Controllers\RoomMemberController;
+use App\Http\Controllers\Security\ReauthController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/health', fn () => response()->json([
     'message' => 'success',
@@ -46,12 +44,6 @@ Route::post('/auth/reset-password', [ResetPasswordController::class, 'store']);
 Route::get('/auth/line/redirect', [LineAuthController::class, 'redirect'])->middleware('web')->name('auth.line.redirect');
 Route::get('/auth/line/callback', [LineAuthController::class, 'callback'])->middleware('web')->name('auth.line.callback');
 Route::post('/auth/line/liff', [LineAuthController::class, 'liff']);
-Route::post('/device-auth/long-token', [DeviceAuthController::class, 'longToken']);
-Route::post('/devices/{serial_number}/access-tokens', [DeviceAuthController::class, 'accessToken']);
-Route::post('/devices/{serial_number}/poll', [DeviceJobController::class, 'poll']);
-Route::post('/device-jobs/{button_action_job_public_id}/progress', [DeviceJobController::class, 'progress']);
-Route::post('/device-jobs/{button_action_job_public_id}/complete', [DeviceJobController::class, 'complete']);
-
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/auth/logout', [LoginController::class, 'destroy']);
     Route::get('/auth/me', [LoginController::class, 'me']);
