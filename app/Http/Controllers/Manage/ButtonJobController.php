@@ -9,9 +9,28 @@ use App\Support\DeviceSerial;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use OpenApi\Attributes as OA;
 
 class ButtonJobController extends ApiController
 {
+    #[OA\Get(
+        path: '/manage/api/button-jobs',
+        operationId: 'manageButtonJobsIndex',
+        summary: 'List button action jobs',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Button Jobs'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/QuerySearch'),
+            new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 50)),
+            new OA\Parameter(name: 'device_serial_number', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 100)),
+            new OA\Parameter(ref: '#/components/parameters/QueryPage'),
+            new OA\Parameter(ref: '#/components/parameters/QueryPerPage'),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function index(Request $request)
     {
         $validated = $request->validate([
@@ -51,6 +70,18 @@ class ButtonJobController extends ApiController
         ]);
     }
 
+    #[OA\Post(
+        path: '/manage/api/button-jobs/{button_action_job_public_id}/cancel',
+        operationId: 'manageButtonJobsCancel',
+        summary: 'Cancel a button action job',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Button Jobs'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathDeviceJob')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function cancel(Request $request, DeviceRuntimeService $runtime, string $jobPublicId)
     {
         $job = ButtonActionJob::query()

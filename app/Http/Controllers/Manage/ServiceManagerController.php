@@ -11,11 +11,29 @@ use App\Services\Manage\ServiceManagerService;
 use App\Support\ManagementRbac;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class ServiceManagerController extends ApiController
 {
     public function __construct(private readonly ServiceManagerService $service) {}
 
+    #[OA\Get(
+        path: '/manage/api/service-managers',
+        operationId: 'manageServiceManagersIndex',
+        summary: 'List service managers and candidates',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Service Managers'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/QuerySearch'),
+            new OA\Parameter(name: 'role', in: 'query', schema: new OA\Schema(type: 'string', enum: ['service_manager', 'not_service_manager', 'all'])),
+            new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 20)),
+            new OA\Parameter(ref: '#/components/parameters/QueryPage'),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function index(Request $request)
     {
         $validated = $request->validate([
@@ -60,6 +78,18 @@ class ServiceManagerController extends ApiController
         ]);
     }
 
+    #[OA\Get(
+        path: '/manage/api/service-managers/{user_public_id}',
+        operationId: 'manageServiceManagersShow',
+        summary: 'Get service manager details and recent activity',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Service Managers'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathUserPublicId')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function show(string $userPublicId)
     {
         $user = $this->findUser($userPublicId);
@@ -102,6 +132,18 @@ class ServiceManagerController extends ApiController
         ]);
     }
 
+    #[OA\Post(
+        path: '/manage/api/service-managers/{user_public_id}/grant',
+        operationId: 'manageServiceManagersGrant',
+        summary: 'Grant the service manager role',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Service Managers'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathUserPublicId')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function grant(Request $request, string $userPublicId)
     {
         $result = $this->service->grant($request, $this->findUser($userPublicId));
@@ -109,6 +151,18 @@ class ServiceManagerController extends ApiController
         return $this->response($result, $result['changed'] ? '已授予服務管理員身分。' : '使用者已是服務管理員。');
     }
 
+    #[OA\Post(
+        path: '/manage/api/service-managers/grant-many',
+        operationId: 'manageServiceManagersGrantMany',
+        summary: 'Grant the service manager role to multiple users',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Service Managers'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ServiceManagerBatchRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function grantMany(Request $request)
     {
         $publicIds = $this->validatedPublicIds($request);
@@ -121,6 +175,18 @@ class ServiceManagerController extends ApiController
         return $this->response(['results' => $results], '批次授權完成。');
     }
 
+    #[OA\Post(
+        path: '/manage/api/service-managers/{user_public_id}/revoke',
+        operationId: 'manageServiceManagersRevoke',
+        summary: 'Revoke the service manager role',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Service Managers'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathUserPublicId')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function revoke(Request $request, string $userPublicId)
     {
         $result = $this->service->revoke($request, $this->findUser($userPublicId));
@@ -128,6 +194,18 @@ class ServiceManagerController extends ApiController
         return $this->response($result, $result['changed'] ? '已撤銷服務管理員身分。' : '使用者目前不是服務管理員。');
     }
 
+    #[OA\Post(
+        path: '/manage/api/service-managers/revoke-many',
+        operationId: 'manageServiceManagersRevokeMany',
+        summary: 'Revoke the service manager role from multiple users',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Service Managers'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ServiceManagerBatchRequest')),
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function revokeMany(Request $request)
     {
         $publicIds = $this->validatedPublicIds($request);

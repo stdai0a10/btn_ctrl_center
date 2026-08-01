@@ -6,14 +6,37 @@ use App\Http\Controllers\ApiController;
 use App\Models\Room;
 use App\Models\User;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class DashboardController extends ApiController
 {
+    #[OA\Get(
+        path: '/manage/api/me',
+        operationId: 'manageMe',
+        summary: 'Get the authenticated management user',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Dashboard'],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function me(Request $request)
     {
         return $this->response($this->adminPayload($request));
     }
 
+    #[OA\Get(
+        path: '/manage/api/dashboard',
+        operationId: 'manageDashboard',
+        summary: 'Get management dashboard statistics',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Dashboard'],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function dashboard(Request $request)
     {
         return $this->response([

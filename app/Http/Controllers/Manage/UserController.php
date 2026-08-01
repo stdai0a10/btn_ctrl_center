@@ -7,9 +7,26 @@ use App\Models\Auth\AuthAttemptLog;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class UserController extends ApiController
 {
+    #[OA\Get(
+        path: '/manage/api/users',
+        operationId: 'manageUsersIndex',
+        summary: 'List users',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Users'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/QuerySearch'),
+            new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string', maxLength: 20)),
+            new OA\Parameter(ref: '#/components/parameters/QueryPage'),
+        ],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function index(Request $request)
     {
         $validated = $request->validate([
@@ -51,6 +68,18 @@ class UserController extends ApiController
         ]);
     }
 
+    #[OA\Get(
+        path: '/manage/api/users/{user_public_id}',
+        operationId: 'manageUsersShow',
+        summary: 'Get a user',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Users'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathUserPublicId')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function show(string $userPublicId)
     {
         $user = $this->findUser($userPublicId);
@@ -63,6 +92,18 @@ class UserController extends ApiController
         ]);
     }
 
+    #[OA\Get(
+        path: '/manage/api/users/{user_public_id}/rooms',
+        operationId: 'manageUsersRooms',
+        summary: 'List rooms for a user',
+        security: [['sessionCookie' => []]],
+        tags: ['Manage Users'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PathUserPublicId')],
+        responses: [
+            new OA\Response(response: 200, ref: '#/components/responses/Success'),
+            new OA\Response(response: 'default', ref: '#/components/responses/Error'),
+        ],
+    )]
     public function rooms(string $userPublicId)
     {
         return $this->response($this->roomsPayload($this->findUser($userPublicId)));
