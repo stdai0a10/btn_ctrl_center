@@ -27,6 +27,11 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('api')
                 ->prefix('device/api')
                 ->group(base_path('routes/device.php'));
+
+            Route::middleware('web')
+                ->prefix('manage')
+                ->name('manage.')
+                ->group(base_path('routes/manage.php'));
         },
     )
     ->withCommands([
