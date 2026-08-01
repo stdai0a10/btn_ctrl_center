@@ -7,10 +7,13 @@ window.axios.interceptors.response.use(
     (response) => response,
     (error) => {
         const status = error.response?.status;
+        const pathname = window.location.pathname;
+        const isManagePage = pathname === '/manage' || pathname.startsWith('/manage/');
+        const loginPath = isManagePage ? '/manage/login' : '/login';
 
-        if ((status === 401 || status === 419) && !window.location.pathname.startsWith('/login')) {
-            const intended = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-            window.location.href = `/login?redirect=${encodeURIComponent(intended)}`;
+        if ((status === 401 || status === 419) && pathname !== loginPath) {
+            const intended = `${pathname}${window.location.search}${window.location.hash}`;
+            window.location.href = `${loginPath}?redirect=${encodeURIComponent(intended)}`;
         }
 
         return Promise.reject(error);
