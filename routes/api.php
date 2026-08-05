@@ -54,9 +54,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::put('/account/password', [PasswordController::class, 'update']);
     Route::get('/account/reauth', [ReauthController::class, 'show']);
     Route::post('/account/reauth', [ReauthController::class, 'store']);
-    Route::get('/account/providers/line/bind', [ProviderBindingController::class, 'lineRedirect'])->name('account.providers.line.bind');
-    Route::post('/account/providers/line/bind', [ProviderBindingController::class, 'lineRedirect']);
-    Route::get('/account/providers/line/callback', [ProviderBindingController::class, 'lineCallback'])->name('account.providers.line.callback');
+    Route::get('/account/providers/line/bind', [ProviderBindingController::class, 'lineRedirect'])->middleware('web')->name('account.providers.line.bind');
+    Route::post('/account/providers/line/bind', [ProviderBindingController::class, 'lineRedirect'])->middleware('web');
+    Route::get('/account/providers/line/callback', [ProviderBindingController::class, 'lineCallback'])->middleware('web')->name('account.providers.line.callback');
     Route::delete('/account/providers/line', [ProviderBindingController::class, 'destroyLine']);
 
     Route::apiResource('rooms', RoomController::class);

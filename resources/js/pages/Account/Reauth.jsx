@@ -6,7 +6,9 @@ export default function Reauth() {
     const [message, setMessage] = useState('');
     const [errors, setErrors] = useState({});
     const [processing, setProcessing] = useState(false);
-    const back = new URLSearchParams(window.location.search).get('back') ?? '/account/profile';
+    const searchParams = new URLSearchParams(window.location.search);
+    const back = searchParams.get('back') ?? '/account/profile';
+    const next = searchParams.get('next') ?? back;
 
     async function submit(event) {
         event.preventDefault();
@@ -17,7 +19,7 @@ export default function Reauth() {
         try {
             const response = await window.axios.post('/api/account/reauth', { password });
             setMessage(response.data.message);
-            window.setTimeout(() => router.visit(back), 350);
+            window.setTimeout(() => router.visit(next), 350);
         } catch (error) {
             setErrors(error.response?.data?.data ?? { form: [error.response?.data?.message ?? '重新驗證失敗。'] });
         } finally {

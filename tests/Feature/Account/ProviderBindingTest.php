@@ -8,11 +8,51 @@ use App\Models\User;
 use App\Services\Auth\AccountBindingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use Laravel\Socialite\Facades\Socialite;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Tests\TestCase;
 
 class ProviderBindingTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_line_binding_requires_recent_reauthentication(): void
+    {
+        $user = $this->verifiedUser('bind-reauth@example.com');
+
+        $this->actingAs($user)
+            ->getJson('/api/account/providers/line/bind')
+            ->assertUnprocessable()
+            ->assertJsonPath('data.reauth.0', '此操作需要重新驗證身分。');
+    }
+
+    public function test_user_can_start_line_binding_after_reauthentication(): void
+    {
+        $user = $this->verifiedUser('bind-line@example.com');
+        $lineAuthorizationUrl = 'https://access.line.me/oauth2/v2.1/authorize?client_id=test-channel';
+        $provider = \Mockery::mock();
+
+        $provider->shouldReceive('redirectUrl')
+            ->once()
+            ->with(route('account.providers.line.callback'))
+            ->andReturnSelf();
+        $provider->shouldReceive('redirect')
+            ->once()
+            ->andReturn(new RedirectResponse($lineAuthorizationUrl));
+        Socialite::shouldReceive('driver')
+            ->once()
+            ->with('line')
+            ->andReturn($provider);
+
+        $this->actingAs($user)
+            ->postJson('/api/account/reauth', ['password' => 'password-password'])
+            ->assertOk();
+
+        $this->actingAs($user)
+            ->get('/api/account/providers/line/bind')
+            ->assertRedirect($lineAuthorizationUrl)
+            ->assertSessionHas('line_oauth_intent', 'bind');
+    }
 
     public function test_user_can_unbind_line_after_reauth_when_password_login_remains(): void
     {
