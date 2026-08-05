@@ -41,8 +41,6 @@ Route::get('/auth/email/verify', [EmailVerificationController::class, 'verify'])
 Route::post('/auth/forgot-password', [ForgotPasswordController::class, 'store']);
 Route::get('/auth/reset-password', [ResetPasswordController::class, 'show']);
 Route::post('/auth/reset-password', [ResetPasswordController::class, 'store']);
-Route::get('/auth/line/redirect', [LineAuthController::class, 'redirect'])->middleware('web')->name('auth.line.redirect');
-Route::get('/auth/line/callback', [LineAuthController::class, 'callback'])->middleware('web')->name('auth.line.callback');
 Route::post('/auth/line/liff', [LineAuthController::class, 'liff']);
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/auth/logout', [LoginController::class, 'destroy']);
@@ -54,9 +52,6 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::put('/account/password', [PasswordController::class, 'update']);
     Route::get('/account/reauth', [ReauthController::class, 'show']);
     Route::post('/account/reauth', [ReauthController::class, 'store']);
-    Route::get('/account/providers/line/bind', [ProviderBindingController::class, 'lineRedirect'])->middleware('web')->name('account.providers.line.bind');
-    Route::post('/account/providers/line/bind', [ProviderBindingController::class, 'lineRedirect'])->middleware('web');
-    Route::get('/account/providers/line/callback', [ProviderBindingController::class, 'lineCallback'])->middleware('web')->name('account.providers.line.callback');
     Route::delete('/account/providers/line', [ProviderBindingController::class, 'destroyLine']);
 
     Route::apiResource('rooms', RoomController::class);

@@ -41,7 +41,7 @@ class ProviderBindingController extends ApiController
         $request->session()->put('line_oauth_intent', 'bind');
 
         return Socialite::driver('line')
-            ->redirectUrl(route('account.providers.line.callback'))
+            ->redirectUrl($this->lineRedirectUri())
             ->redirect();
     }
 
@@ -67,7 +67,7 @@ class ProviderBindingController extends ApiController
         }
 
         $lineUser = Socialite::driver('line')
-            ->redirectUrl(route('account.providers.line.callback'))
+            ->redirectUrl($this->lineRedirectUri())
             ->user();
 
         $accountBindingService->bindLine(
@@ -101,5 +101,10 @@ class ProviderBindingController extends ApiController
         $accountBindingService->unbindLine($request->user());
 
         return $this->response(null, 'LINE 綁定已解除。');
+    }
+
+    private function lineRedirectUri(): string
+    {
+        return (string) config('services.line.binding_redirect');
     }
 }
