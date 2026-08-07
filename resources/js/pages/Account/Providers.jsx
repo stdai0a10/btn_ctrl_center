@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import AppLayout from '../../layouts/AppLayout';
 
@@ -6,6 +6,7 @@ export default function Providers() {
     const [profile, setProfile] = useState(null);
     const [message, setMessage] = useState('');
     const [errors, setErrors] = useState({});
+    const [bindingLine, setBindingLine] = useState(false);
 
     async function loadProfile() {
         const response = await window.axios.get('/api/account/profile');
@@ -14,7 +15,34 @@ export default function Providers() {
 
     useEffect(() => {
         loadProfile();
+
+        if (new URLSearchParams(window.location.search).get('bind') === 'line') {
+            bindLine();
+        }
     }, []);
+
+    async function bindLine() {
+        setBindingLine(true);
+        setErrors({});
+        setMessage('');
+
+        try {
+            const response = await window.axios.get('/api/account/reauth');
+
+            if (!response.data.data.is_valid) {
+                const back = encodeURIComponent('/account/providers');
+                const next = encodeURIComponent('/account/providers?bind=line');
+                router.visit(`/reauth?back=${back}&next=${next}`);
+                return;
+            }
+
+            window.location.assign('/api/account/providers/line/bind');
+        } catch (error) {
+            setErrors(error.response?.data?.data ?? { form: [error.response?.data?.message ?? '無法開始 LINE 綁定。'] });
+        } finally {
+            setBindingLine(false);
+        }
+    }
 
     async function unbindLine() {
         if (!window.confirm('解除 LINE 綁定後，將無法再用此 LINE 登入。確定解除？')) {
@@ -61,7 +89,9 @@ export default function Providers() {
                         {isBound ? (
                             <button type="button" onClick={unbindLine}>解除綁定</button>
                         ) : (
-                            <a className="button-link secondary" href="/api/account/providers/line/bind">綁定 LINE</a>
+                            <button className="button-link secondary" type="button" onClick={bindLine} disabled={bindingLine}>
+                                {bindingLine ? '準備 LINE 綁定...' : '綁定 LINE'}
+                            </button>
                         )}
                     </div>
 
