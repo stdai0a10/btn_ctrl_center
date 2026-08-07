@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 export default function VerifyEmailResult() {
@@ -31,8 +31,8 @@ export default function VerifyEmailResult() {
                         {state.message}
                     </div>
                     <div className="actions-row">
-                        <Link className="text-link" href="/login">前往登入</Link>
-                        <Link className="text-link" href="/register">重新註冊</Link>
+                        <a className="text-link" href="/login">前往登入</a>
+                        <a className="text-link" href="/register">重新註冊</a>
                     </div>
                 </section>
             </main>

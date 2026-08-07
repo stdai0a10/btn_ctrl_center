@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 
 export default function ForgotPassword() {
@@ -55,7 +55,7 @@ export default function ForgotPassword() {
                         </button>
                     </form>
 
-                    <Link className="text-link" href="/login">返回登入</Link>
+                    <a className="text-link" href="/login">返回登入</a>
                 </section>
             </main>
         </>

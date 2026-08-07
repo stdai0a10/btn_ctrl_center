@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 import AppLayout from '../../layouts/AppLayout';
 
@@ -85,7 +85,7 @@ export default function Register() {
                         </button>
                     </form>
 
-                    <Link className="text-link" href="/login">已有帳號？前往登入</Link>
+                    <a className="text-link" href="/login">已有帳號？前往登入</a>
                 </section>
             </AppLayout>
         </>
