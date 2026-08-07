@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 export default function ResetPassword() {
@@ -83,7 +83,7 @@ export default function ResetPassword() {
                         </form>
                     )}
 
-                    <Link className="text-link" href="/login">返回登入</Link>
+                    <a className="text-link" href="/login">返回登入</a>
                 </section>
             </main>
         </>

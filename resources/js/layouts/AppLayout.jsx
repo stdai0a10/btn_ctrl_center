@@ -17,7 +17,7 @@ export default function AppLayout({ children, contentClassName = '' }) {
             return;
         }
 
-        router.visit('/login');
+        window.location.assign('/login');
     }
 
     const navItems = [
