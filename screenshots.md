@@ -34,6 +34,41 @@
 
 ![按下按鈕](./img/user-buttons-run-2.jpg)
 
+#### 影片
+
+<div
+  style="
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-top: 56%;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(63,69,81,0.16);
+    margin-top: 1.6em;
+    margin-bottom: 0.9em;
+    will-change: transform;
+  "
+>
+  <iframe
+    src="https://drive.google.com/file/d/1jeumDgM2suWmiVA1uqw3YZ2XzA8OrBto/preview"
+    loading="lazy"
+    allowfullscreen
+    allow="clipboard-write; fullscreen"
+    referrerpolicy="strict-origin-when-cross-origin"
+    style="
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      padding: 0;
+      margin: 0;
+    "
+  ></iframe>
+</div>
+
 ## 服務中控
 
 ### 管理登入
