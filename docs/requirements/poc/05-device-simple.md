@@ -22,7 +22,7 @@
 5. 設備同一時間只能屬於一間房間。
 6. 房主使用序號與隱碼將設備加入房間。
 7. 設備不存在時回傳 `DEVICE_NOT_FOUND`，不得自動建立。
-8. 設備移轉、鎖定及移除規則沿用 `.data/Story-Room.md`。
+8. 設備移轉、鎖定及移除規則沿用 `docs/requirements/poc/02-room.md`。
 
 ## 權限
 
@@ -225,4 +225,3 @@ App\Services\Manage\DeviceCatalogService
 - 執行後端測試與前端 build。
 
 完成條件：角色權限正確，設備資料安全，主要流程皆有測試。
-

@@ -199,7 +199,7 @@ php artisan system-admin:remove {user_public_id}
 /manage/audit/manage-actions
 ```
 
-已存在於 [./Story-Service-Manager.md](./Story-Service-Manager.md) 裡的頁面，在這邊就不再贅述
+已存在於 [docs/requirements/poc/03-service_manager.md](./03-service_manager.md) 裡的頁面，在這邊就不再贅述
 
 ### 服務管理員一覽頁
 
@@ -381,7 +381,7 @@ php artisan system-admin:remove {user_public_id}
 
 ### 後台路徑
 
-已存在 [./Story-Service-Manager.md](./Story-Service-Manager.md) 裡的建議，在這邊就不再贅述
+已存在 [docs/requirements/poc/03-service_manager.md](./03-service_manager.md) 裡的建議，在這邊就不再贅述
 
 服務管理員管理
 
@@ -410,7 +410,7 @@ php artisan system-admin:remove {user_public_id}
 
 ### 建議 API
 
-已存在 [./Story-Service-Manager.md](./Story-Service-Manager.md) 裡的建議，在這邊就不再贅述
+已存在 [docs/requirements/poc/03-service_manager.md](./03-service_manager.md) 裡的建議，在這邊就不再贅述
 
 服務管理員管理
 
@@ -437,7 +437,7 @@ GET /manage/api/audit/manage-actions
 
 ### Middleware 建議
 
-已存在 [./Story-Service-Manager.md](./Story-Service-Manager.md) 裡的建議，在這邊就不再贅述
+已存在 [docs/requirements/poc/03-service_manager.md](./03-service_manager.md) 裡的建議，在這邊就不再贅述
 
 #### 頁面 Middleware
 
@@ -506,7 +506,7 @@ GET /manage/api/audit/manage-actions
 
 RBAC 模型由 `spatie/laravel-permission` 提供。
 
-已存在 [./Story-Service-Manager.md](./Story-Service-Manager.md) 裡的建議，在這邊就不再贅述
+已存在 [docs/requirements/poc/03-service_manager.md](./03-service_manager.md) 裡的建議，在這邊就不再贅述
 
 #### manage_login_logs
 

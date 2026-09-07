@@ -4,10 +4,10 @@
 
 比對文件：
 
-- `.data/Story-Auth.md`
-- `.data/Story-Room.md`
-- `.data/Story-Service-Manager.md`
-- `.data/Story-System-Admin.md`
+- `docs/requirements/poc/01-auth.md`
+- `docs/requirements/poc/02-room.md`
+- `docs/requirements/poc/03-service_manager.md`
+- `docs/requirements/poc/04-system_admin.md`
 
 分析範圍包含 migrations、models、services、controllers、middleware、routes、React/Inertia 頁面、console commands 與 feature tests。
 
@@ -343,4 +343,3 @@
 6. 擴充 auth/manage audit log 與限流測試。
 7. 讓 system admin CLI no-op 也記錄 audit，並補 `system` actor logger。
 8. 明確定義批次角色異動是 all-or-nothing 或允許部分成功，再依決策調整 API response 與 transaction。
-

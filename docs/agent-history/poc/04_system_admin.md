@@ -2,10 +2,10 @@
 
 ## step 1
 
-依照文件 `.data\Story-System-Admin.md` 裡的規格、建議，進行「管理功能」的擴充開發:
+依照文件 `docs/requirements/poc/04-system_admin.md` 裡的規格、建議，進行「管理功能」的擴充開發:
 
 - 此專案後端使用 Laravel 12、前端使用 Inertia + React
-- 部分資料須參考 `.data\Story-Service-Manager.md` 和已存在的程式碼
+- 部分資料須參考 `docs/requirements/poc/03-service_manager.md` 和已存在的程式碼
 - 依照 `Phase 分割建議` 進行階段性開發，每完成一個階段就進行一次提交
   - 提交開頭要用 `Phase N:`
 

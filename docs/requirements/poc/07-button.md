@@ -4,7 +4,7 @@
 
 建立登入後的主要「按鈕」頁面，讓一般使用者可以透過自訂分頁與自訂按鈕，對自己有權限觸及的指定設備派發任務。
 
-本規劃整合 `.data/Plan-button-simple.md` 與 `.data/runner-pull-based-job-service.md`，並套用以下核心關係：
+本規劃整合 `docs/requirements/poc/07-button-simple.md` 與 `docs/requirements/poc/runner-pull-based-job-service.md`，並套用以下核心關係：
 
 1. 設備本身就是 runner，不另建立獨立 runner 身分。
 2. 設備使用自身序號與隱碼向 Server 換取長效 JWT token。
@@ -45,7 +45,7 @@
 
 ### 設備
 
-設備是實體硬體，也是 `.data/runner-pull-based-job-service.md` 內的 runner。
+設備是實體硬體，也是 `docs/requirements/poc/runner-pull-based-job-service.md` 內的 runner。
 
 設備會：
 

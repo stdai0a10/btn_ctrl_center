@@ -2,16 +2,16 @@
 
 ## step 0
 
-請分析專案的程式碼，並和下列開發規劃文件內容進行比對，找出現在程式情況和原本規劃的差異，以 markdown 的格式輸出到 `.data/POC-1.md`
+請分析專案的程式碼，並和下列開發規劃文件內容進行比對，找出現在程式情況和原本規劃的差異，以 markdown 的格式輸出到 `docs/agent-history/POC-1.md`
 
-1. .data/Story-Auth.md
-2. .data/Story-Room.md
-3. .data/Story-Service-Manager.md
-4. .data/Story-System-Admin.md
+1. docs/requirements/poc/01-auth.md
+2. docs/requirements/poc/02-room.md
+3. docs/requirements/poc/03-service_manager.md
+4. docs/requirements/poc/04-system_admin.md
 
 ## step 1.1
 
-幫我擬一個關於設備的開發文件，並儲存成 .data/Plan-Device.md。附上一些需求:
+幫我擬一個關於設備的開發文件，並儲存成 docs/requirements/poc/05-device.md。附上一些需求:
 
 - 服務管理員可以透過服務後台看到資料庫裡所有 devices
   - 服務管理員可以看到 room 有哪些 devices
@@ -24,7 +24,7 @@
 
 ## step 1.2
 
-依照 `.data\Plan-Device.md` 的內容製作簡易版規劃，並儲存在`.data\Plan-Device-Simple.md`
+依照 `docs/requirements/poc/05-device.md` 的內容製作簡易版規劃，並儲存在 `docs/requirements/poc/05-device-simple.md`
 
 ## step 1.3
 
@@ -40,7 +40,7 @@
 
 ## step 1.6
 
-如果我把 .data/Plan-Device.md 交給新的AI SESSION開發，能確保符合預期嗎？
+如果我把 docs/requirements/poc/05-device.md 交給新的AI SESSION開發，能確保符合預期嗎？
 
 ## step 1.7
 
@@ -48,11 +48,11 @@
 
 ## step 1.8
 
-我接受你對模糊點的建議，現在把這些建議加入  .data/Plan-Device.md
+我接受你對模糊點的建議，現在把這些建議加入 docs/requirements/poc/05-device.md
 
 ## step 2
 
-現在請依照文件 .data\Plan-Device.md 進行開發
+現在請依照文件 docs/requirements/poc/05-device.md 進行開發
 
 ## step 3.1
 

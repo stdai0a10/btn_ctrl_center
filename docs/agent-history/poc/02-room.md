@@ -2,7 +2,7 @@
 
 ## step 1
 
-依照文件 `./.data/Story-Device.md` 裡的規格、建議，進行「房屋設備管理功能」的開發:
+依照文件 `docs/requirements/poc/02-room.md` 裡的規格、建議，進行「房屋設備管理功能」的開發:
 
 - 後端使用 Laravel 12
 - 前端使用 Inertia + React
@@ -28,7 +28,7 @@
 
 ### step 3.1
 
-圖片 `.data/page-view.jpg` 裡面簡單地畫了 PC 網頁和手機網頁應呈現的樣子。請依照圖片去修改前端網頁結構
+圖片 `docs/requirements/poc/page-view-user.jpg` 裡面簡單地畫了 PC 網頁和手機網頁應呈現的樣子。請依照圖片去修改前端網頁結構
 
 ### step 3.2
 
@@ -40,7 +40,7 @@
 
 ## step 4
 
-現在要修改定義：把「房屋 (house)」全部改成「房間 (room)」。我已經修改了文件 `./.data/Story-Device.md`。請幫我把所有對應的類型、名詞、資料庫、顯示、......等全部進行替換。
+現在要修改定義：把「房屋 (house)」全部改成「房間 (room)」。我已經修改了文件 `docs/requirements/poc/02-room.md`。請幫我把所有對應的類型、名詞、資料庫、顯示、......等全部進行替換。
 
 備註：相關 migration 均未執行，可以直接修改相關檔案。
 
