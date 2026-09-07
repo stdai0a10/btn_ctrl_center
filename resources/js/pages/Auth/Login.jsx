@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import AppLayout from '../../layouts/AppLayout';
 
@@ -70,8 +70,8 @@ export default function Login() {
                     <a className="button-link secondary" href="/api/auth/line/redirect">使用 LINE 登入</a>
 
                     <div className="actions-row">
-                        <Link className="text-link" href="/register">建立帳號</Link>
-                        <Link className="text-link" href="/forgot-password">忘記密碼</Link>
+                        <a className="text-link" href="/register">建立帳號</a>
+                        <a className="text-link" href="/forgot-password">忘記密碼</a>
                     </div>
                 </section>
             </AppLayout>
