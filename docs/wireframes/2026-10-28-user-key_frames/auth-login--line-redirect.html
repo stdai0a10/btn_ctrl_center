@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>登入 / LINE 外部流程 · Wireframe</title>
+<link rel="stylesheet" href="wireframe.css">
+<script defer src="wireframe.js"></script>
+</head>
+<body>
+<div class="review-bar"><div><span class="review-label">WIREFRAME / KF-004</span><span class="review-title">登入 / LINE 外部流程</span></div><nav class="review-actions" aria-label="Wireframe 導覽"><a class="button" href="index.html">畫面索引</a><a class="button adjacent" href="auth-login--processing.html">上一張</a><a class="button adjacent" href="auth-register.html">下一張</a></nav></div><div data-underlay><main class="auth-shell"><section class="panel"><div class="page-heading"><div><p class="eyebrow">Auth/Login</p><h1>登入</h1></div></div><div id="preview-notice" class="notice" role="status" hidden></div><p class="muted">請使用已驗證 EMAIL 與密碼登入。</p><form class="stack" data-next="buttons-index.html" action="buttons-index.html"><label>EMAIL<input type="email" value="demo@example.test"  autocomplete="off"></label><label>密碼<input type="password" value="wireframe-only"  autocomplete="off"></label><button class="primary" type="submit">登入</button></form><hr><a class="button" href="auth-login--line-redirect.html" >使用 LINE 登入</a><div class="actions"><a class="" href="auth-register.html" >建立帳號</a><a class="" href="auth-forgotpassword.html" >忘記密碼</a></div></section><footer class="frame-notes"><p><strong>KF-004</strong> · /login · LINE 外部流程</p><p>對照來源：<a href="../../../resources/js/pages/Auth/Login.jsx">resources/js/pages/Auth/Login.jsx</a></p><p>灰階結構示意；所有人物、識別碼、時間與資料皆為虛構。「使用 LINE 登入」會導向 /api/auth/line/redirect，LINE 授權畫面屬外部服務；此文件只標示交接點。</p><nav class="state-links" aria-label="相關狀態"><a class="" href="auth-login.html" >預設</a><a class="" href="auth-login--error.html" >登入錯誤</a><a class="" href="auth-login--processing.html" >登入中</a><a class="" href="auth-login--line-redirect.html" aria-current="page">LINE 外部流程</a></nav></footer></main></div><div class="overlay"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1" data-close="auth-login.html"><div class="panel-head"><h2 id="dialog-title">離開本站進行 LINE 授權</h2><a class="button" href="auth-login.html" aria-label="關閉對話框">×</a></div><div class="dialog-body"><p>目前實作交接至 LINE OAuth，登入完成後回到本站。此為流程註記，並非產品內的確認視窗。</p><a class="button" href="auth-login.html" >返回登入示意</a></div></section></div>
+</body>
+</html>
