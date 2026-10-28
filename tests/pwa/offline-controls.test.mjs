@@ -127,3 +127,31 @@ test('successful recovery ignores the original POST late rejection',async()=>{
         assert.equal([...document.querySelectorAll('button')].find(b=>b.textContent==='開燈').matches(':disabled'),false);assert.equal(app.posts,1);
     }finally{await app.close();}
 });
+
+test('missing record acknowledgment unlocks controls without sending an action',async()=>{
+    const app=await mount({storage:JSON.stringify({request_id:'missing',user_public_id:'user1',created_at:Date.now()}),get:async url=>{if(url.includes('/request/'))throw {response:{status:404}};return response(url==='/api/button-pages'?[page]:url.includes('targets')?[]:null);}});
+    try{
+        assert.match(app.text(),/手動確認/);
+        assert.equal([...document.querySelectorAll('button')].find(b=>b.textContent==='開燈').getAttribute('aria-disabled'),'true');
+        await click('我已確認設備狀態');
+        assert.equal(window.localStorage.getItem('button-action-pending'),null);
+        assert.doesNotMatch(app.text(),/查無任務紀錄|執行成功/);
+        assert.equal([...document.querySelectorAll('button')].find(b=>b.textContent==='開燈').getAttribute('aria-disabled'),'false');
+        assert.equal(app.posts,0);
+    }finally{await app.close();}
+});
+
+for(const endpoint of ['/api/button-pages','/api/button-actions/current'])test(`late old-account GET rejection is ignored: ${endpoint}`,async()=>{
+    let rejectOld;
+    const app=await mount({get:url=>{
+        if(globalThis.testUser.public_id==='user1' && url===endpoint)return new Promise((resolve,reject)=>{rejectOld=reject;});
+        return Promise.resolve(response(url==='/api/button-pages'?[page]:url.includes('targets')?[]:null));
+    }});
+    try{
+        await app.rerender('user2');
+        await act(async()=>{rejectOld(new Error('old account network'));await new Promise(r=>setTimeout(r,10));});
+        assert.doesNotMatch(app.text(),/連線中斷|任務狀態查詢失敗|old account network/);
+        assert.equal([...document.querySelectorAll('button')].find(b=>b.textContent==='開燈').matches(':disabled'),false);
+        assert.equal(app.posts,0);
+    }finally{await app.close();}
+});

@@ -33,6 +33,7 @@ export default function ButtonsIndex() {
     const userId = usePage().props.auth?.user?.public_id;
     const [disconnected, setDisconnected] = useState(window.navigator.onLine === false);
     const [uncertain, setUncertain] = useState('');
+    const [missingRecord, setMissingRecord] = useState(false);
     const currentUserRef = useRef(userId);
     currentUserRef.current = userId;
     const pendingRef = useRef(null);
@@ -66,6 +67,7 @@ export default function ButtonsIndex() {
 
     useEffect(() => {
         setJob(null);
+        setMissingRecord(false);
         setPages([]);
         setTargets([]);
         setDraft(null);
@@ -101,6 +103,7 @@ export default function ButtonsIndex() {
             clearPendingAction(); pendingRef.current = null; setUncertain(''); return;
         }
         recoveringRef.current = true;
+        setMissingRecord(false);
         try {
             const response = await window.axios.get(`/api/button-actions/request/${encodeURIComponent(pending.request_id)}`);
             if (currentUserRef.current !== userId || pendingRef.current !== pending) return;
@@ -110,6 +113,7 @@ export default function ButtonsIndex() {
         } catch (caught) {
             if (currentUserRef.current !== userId || pendingRef.current !== pending) return;
             if (caught.response?.status === 404) {
+                setMissingRecord(true);
                 setUncertain('查無任務紀錄，請手動確認設備狀態；不會自動重送。');
                 setDisconnected(false);
             } else {
@@ -183,9 +187,10 @@ export default function ButtonsIndex() {
             setActivePageId((current) => current ?? nextPages[0]?.public_id ?? null);
             setDisconnected(false);
         } catch (caught) {
+            if (currentUserRef.current !== userId) return;
             setError(errorMessage(caught));
             if (!caught.response) setDisconnected(true);
-        } finally { setLoading(false); }
+        } finally { if (currentUserRef.current === userId) setLoading(false); }
     }
 
     async function loadCurrentJob() {
@@ -199,6 +204,7 @@ export default function ButtonsIndex() {
                 if (currentUserRef.current === userId) setJob(jobResponse.data.data.job);
             }
         } catch (caught) {
+            if (currentUserRef.current !== userId) return;
             setError('任務狀態查詢失敗，結果尚未確認。');
             if (!caught.response) setDisconnected(true);
         }
@@ -460,7 +466,7 @@ export default function ButtonsIndex() {
             <Head title="按鈕" />
             <AppLayout contentClassName="buttons-main">
                 {disconnected && <div role="status" className="notice error">連線中斷，已顯示的資料可能過期；恢復連線前無法操作。<button type="button" onClick={() => { reload(); if (pendingRef.current) recoverPending(); else loadCurrentJob(); }}>重新連線</button></div>}
-                {uncertain && <div role="status" className="notice error">{uncertain}<button type="button" onClick={recoverPending}>查證任務</button></div>}
+                {uncertain && <div role="status" className="notice error">{uncertain}<button type="button" onClick={recoverPending}>查證任務</button>{missingRecord && <button type="button" onClick={() => { clearPendingAction(); pendingRef.current = null; setUncertain(''); setMissingRecord(false); }}>我已確認設備狀態</button>}</div>}
                 <fieldset disabled={disconnected} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
                 {message && <div className="notice success">{message}</div>}
                 {error && <div className="notice error">{error}</div>}
