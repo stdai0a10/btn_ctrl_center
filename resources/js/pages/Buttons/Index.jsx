@@ -1,8 +1,9 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { ArrowDown, ArrowUp, ChevronDown, Circle, Info, Menu, Plus, Power, Save, Square, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import AppLayout from '../../layouts/AppLayout';
 import { errorMessage } from '../../lib/http';
+import { clearPendingAction, readPendingAction, savePendingAction } from '../../lib/pendingAction';
 
 const iconMap = { power: Power, square: Square, circle: Circle };
 const runningStatuses = ['queued', 'running'];
@@ -29,6 +30,13 @@ const emptyButton = {
 };
 
 export default function ButtonsIndex() {
+    const userId = usePage().props.auth?.user?.public_id;
+    const [disconnected, setDisconnected] = useState(window.navigator.onLine === false);
+    const [uncertain, setUncertain] = useState('');
+    const currentUserRef = useRef(userId);
+    currentUserRef.current = userId;
+    const pendingRef = useRef(null);
+    const recoveringRef = useRef(false);
     const tabListRef = useRef(null);
     const [pages, setPages] = useState([]);
     const [activePageId, setActivePageId] = useState(null);
@@ -54,12 +62,73 @@ export default function ButtonsIndex() {
     const visiblePage = editing && draft ? draft : activePage;
     const jobIsRunning = job && runningStatuses.includes(job.status);
     const jobTimedOut = jobIsRunning && frontEndTimedOutJobId === job.public_id;
-    const actionLocked = jobIsRunning && !jobTimedOut;
+    const actionLocked = disconnected || Boolean(uncertain) || (jobIsRunning && !jobTimedOut);
 
     useEffect(() => {
+        setJob(null);
+        setPages([]);
+        setTargets([]);
+        setDraft(null);
+        setEditing(false);
+        setButtonForm(null);
+        setButtonMenu(null);
+        setInfoButton(null);
+        setError('');
+        setMessage('');
+        pendingRef.current = readPendingAction(userId);
+        setUncertain(pendingRef.current ? '結果不確定，正在查證先前的按鈕任務。' : '');
         reload();
-        loadCurrentJob();
-    }, []);
+        if (pendingRef.current) recoverPending();
+        else loadCurrentJob();
+        const offline = () => setDisconnected(true);
+        const online = () => {
+            reload();
+            if (pendingRef.current) recoverPending();
+            else loadCurrentJob();
+        };
+        window.addEventListener('offline', offline);
+        window.addEventListener('online', online);
+        return () => {
+            window.removeEventListener('offline', offline);
+            window.removeEventListener('online', online);
+        };
+    }, [userId]);
+
+    async function recoverPending() {
+        const pending = pendingRef.current;
+        if (!pending || recoveringRef.current) return;
+        if (Date.now() - pending.created_at >= 24 * 60 * 60 * 1000) {
+            clearPendingAction(); pendingRef.current = null; setUncertain(''); return;
+        }
+        recoveringRef.current = true;
+        try {
+            const response = await window.axios.get(`/api/button-actions/request/${encodeURIComponent(pending.request_id)}`);
+            if (currentUserRef.current !== userId) return;
+            setJob(response.data.data.job);
+            clearPendingAction(); pendingRef.current = null;
+            setUncertain(''); setDisconnected(false);
+        } catch (caught) {
+            if (currentUserRef.current !== userId) return;
+            if (caught.response?.status === 404) {
+                setUncertain('查無任務紀錄，請手動確認設備狀態；不會自動重送。');
+                setDisconnected(false);
+            } else {
+                setUncertain('結果不確定，請恢復連線後查證；不會自動重送。');
+                if (!caught.response) setDisconnected(true);
+            }
+        } finally { recoveringRef.current = false; }
+    }
+
+    useEffect(() => {
+        const pending = pendingRef.current;
+        if (!pending) return undefined;
+        const timer = window.setTimeout(() => {
+            clearPendingAction();
+            pendingRef.current = null;
+            setUncertain('');
+        }, Math.max(0, pending.created_at + 24 * 60 * 60 * 1000 - Date.now()));
+        return () => window.clearTimeout(timer);
+    }, [uncertain, userId]);
 
     useEffect(() => {
         if (!jobIsRunning) return undefined;
@@ -103,32 +172,40 @@ export default function ButtonsIndex() {
 
     async function reload() {
         setLoading(true);
-        const [pagesResponse, targetsResponse] = await Promise.all([
-            window.axios.get('/api/button-pages'),
-            window.axios.get('/api/buttons/selectable-targets'),
-        ]);
-        const nextPages = pagesResponse.data.data;
-        setPages(nextPages);
-        setTargets(targetsResponse.data.data);
-        setActivePageId((current) => current ?? nextPages[0]?.public_id ?? null);
-        setLoading(false);
+        try {
+            const [pagesResponse, targetsResponse] = await Promise.all([
+                window.axios.get('/api/button-pages'),
+                window.axios.get('/api/buttons/selectable-targets'),
+            ]);
+            if (currentUserRef.current !== userId) return;
+            const nextPages = pagesResponse.data.data;
+            setPages(nextPages); setTargets(targetsResponse.data.data);
+            setActivePageId((current) => current ?? nextPages[0]?.public_id ?? null);
+            setDisconnected(false);
+        } catch (caught) {
+            setError(errorMessage(caught));
+            if (!caught.response) setDisconnected(true);
+        } finally { setLoading(false); }
     }
 
     async function loadCurrentJob() {
-        const response = await window.axios.get('/api/button-actions/current');
-        const current = response.data.data?.job ?? null;
-        if (current) {
-            setJob(current);
-            return;
-        }
-
-        if (job?.public_id && ['queued', 'running'].includes(job.status)) {
-            const jobResponse = await window.axios.get(`/api/button-actions/${job.public_id}`);
-            setJob(jobResponse.data.data.job);
+        try {
+            const response = await window.axios.get('/api/button-actions/current');
+            if (currentUserRef.current !== userId) return;
+            const current = response.data.data?.job ?? null;
+            if (current) setJob(current);
+            else if (job?.public_id && runningStatuses.includes(job.status)) {
+                const jobResponse = await window.axios.get(`/api/button-actions/${job.public_id}`);
+                if (currentUserRef.current === userId) setJob(jobResponse.data.data.job);
+            }
+        } catch (caught) {
+            setError('任務狀態查詢失敗，結果尚未確認。');
+            if (!caught.response) setDisconnected(true);
         }
     }
 
     async function run(task, success) {
+        if (disconnected) return null;
         setProcessing(true);
         setMessage('');
         setError('');
@@ -138,7 +215,8 @@ export default function ButtonsIndex() {
             return response;
         } catch (caught) {
             setError(errorMessage(caught));
-            throw caught;
+            if (!caught.response) setDisconnected(true);
+            return null;
         } finally {
             setProcessing(false);
         }
@@ -150,6 +228,7 @@ export default function ButtonsIndex() {
             () => window.axios.post('/api/button-pages', { name: newPageName, layout_columns: 3 }),
             '按鈕分頁已建立。',
         );
+        if (!response) return;
         setNewPageName('');
         await reload();
         setActivePageId(response.data.data.public_id);
@@ -160,7 +239,7 @@ export default function ButtonsIndex() {
     async function deletePage(page) {
         if (!window.confirm(`確定要刪除「${page.name}」？此操作無法復原。`)) return;
 
-        await run(() => window.axios.delete(`/api/button-pages/${page.public_id}`), '按鈕分頁已刪除。');
+        if (!await run(() => window.axios.delete(`/api/button-pages/${page.public_id}`), '按鈕分頁已刪除。')) return;
         setEditing(false);
         setDraft(null);
         await reload();
@@ -173,7 +252,7 @@ export default function ButtonsIndex() {
 
         const ids = pages.map((item) => item.public_id);
         [ids[index], ids[nextIndex]] = [ids[nextIndex], ids[index]];
-        await run(() => window.axios.put('/api/button-pages/order', { button_page_public_ids: ids }), '按鈕分頁順序已更新。');
+        if (!await run(() => window.axios.put('/api/button-pages/order', { button_page_public_ids: ids }), '按鈕分頁順序已更新。')) return;
         await reload();
     }
 
@@ -201,7 +280,7 @@ export default function ButtonsIndex() {
     async function savePageOrder() {
         if (!orderingPageIds) return;
 
-        await run(() => window.axios.put('/api/button-pages/order', { button_page_public_ids: orderingPageIds }), '按鈕分頁順序已更新。');
+        if (!await run(() => window.axios.put('/api/button-pages/order', { button_page_public_ids: orderingPageIds }), '按鈕分頁順序已更新。')) return;
         setOrderingPageIds(null);
         await reload();
     }
@@ -244,7 +323,7 @@ export default function ButtonsIndex() {
             })),
         };
 
-        await run(() => window.axios.put(`/api/button-pages/${draft.public_id}/layout`, payload), '按鈕分頁已儲存。');
+        if (!await run(() => window.axios.put(`/api/button-pages/${draft.public_id}/layout`, payload), '按鈕分頁已儲存。')) return;
         setEditing(false);
         setDraft(null);
         await reload();
@@ -346,15 +425,27 @@ export default function ButtonsIndex() {
             return;
         }
 
+        if (processing || pendingRef.current) return;
         const requestId = window.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
-        const response = await run(
-            () => window.axios.post('/api/button-actions', {
-                button_public_id: button.public_id,
-                request_id: requestId,
-            }),
-            '按鈕任務已建立。',
-        );
-        setJob(response.data.data.job);
+        pendingRef.current = savePendingAction(requestId, userId);
+        setProcessing(true); setError(''); setMessage('');
+        try {
+            const response = await window.axios.post('/api/button-actions', {
+                button_public_id: button.public_id, request_id: requestId,
+            });
+            if (currentUserRef.current !== userId) return;
+            setJob(response.data.data.job);
+            clearPendingAction(); pendingRef.current = null; setUncertain('');
+        } catch (caught) {
+            if (currentUserRef.current !== userId) return;
+            if (!caught.response || caught.response.status >= 500) {
+                setUncertain('結果不確定，請恢復連線後查證；不會自動重送。');
+                if (!caught.response) setDisconnected(true);
+            } else {
+                clearPendingAction(); pendingRef.current = null;
+                setError(errorMessage(caught));
+            }
+        } finally { setProcessing(false); }
     }
 
     const orderedPages = orderingPageIds
@@ -367,6 +458,9 @@ export default function ButtonsIndex() {
         <>
             <Head title="按鈕" />
             <AppLayout contentClassName="buttons-main">
+                {disconnected && <div role="status" className="notice error">連線中斷，已顯示的資料可能過期；恢復連線前無法操作。<button type="button" onClick={() => { reload(); if (pendingRef.current) recoverPending(); else loadCurrentJob(); }}>重新連線</button></div>}
+                {uncertain && <div role="status" className="notice error">{uncertain}<button type="button" onClick={recoverPending}>查證任務</button></div>}
+                <fieldset disabled={disconnected} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
                 {message && <div className="notice success">{message}</div>}
                 {error && <div className="notice error">{error}</div>}
                 {job && <JobPanel job={job} timedOut={jobTimedOut} onClose={() => setJob(null)} />}
@@ -610,6 +704,7 @@ export default function ButtonsIndex() {
                         )}
                     </section>
                 )}
+                </fieldset>
             </AppLayout>
         </>
     );

@@ -91,5 +91,6 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/buttons/selectable-targets', ButtonTargetController::class);
     Route::post('/button-actions', [ButtonActionController::class, 'store']);
     Route::get('/button-actions/current', [ButtonActionController::class, 'current']);
+    Route::get('/button-actions/request/{requestId}', [ButtonActionController::class, 'byRequest']);
     Route::get('/button-actions/{buttonActionJob}', [ButtonActionController::class, 'show']);
 });

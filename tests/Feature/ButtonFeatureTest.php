@@ -252,6 +252,22 @@ class ButtonFeatureTest extends TestCase
         $this->travelBack();
     }
 
+    public function test_request_lookup_includes_finished_jobs_and_is_scoped_to_authenticated_user(): void
+    {
+        [$owner, $other] = User::factory()->count(2)->create();
+        [$device, $function] = $this->createSelectableDevice($owner);
+        $button = $this->createButton($owner, $device, $function);
+        $id = $this->actingAs($owner)->postJson('/api/button-actions', [
+            'button_public_id' => $button, 'request_id' => 'recover-finished',
+        ])->assertCreated()->json('data.job.public_id');
+        ButtonActionJob::where('public_id', $id)->update(['status' => ButtonActionJob::STATUS_SUCCEEDED]);
+        $this->getJson('/api/button-actions/request/recover-finished')->assertOk()
+            ->assertJsonPath('data.job.public_id', $id)->assertJsonPath('data.job.status', 'succeeded');
+        $this->actingAs($other)->getJson('/api/button-actions/request/recover-finished')->assertNotFound();
+        $this->getJson('/api/button-actions/request/missing')->assertNotFound();
+        $this->assertDatabaseCount('button_action_jobs', 1);
+    }
+
     /**
      * @return array{Device, ProductFunction}
      */
