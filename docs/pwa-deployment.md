@@ -18,16 +18,32 @@ Nginx 的 document root 為 `public`。根目錄 `/sw.js` 維持根 scope；`/ma
 - `git diff --check`
 - 用暫時 Nginx container 掛載 `public` 至 `/var/www/app/public`、`nginx.d/default.conf` 至 `/etc/nginx/conf.d/default.conf`，只公開 localhost 測試埠。執行 `nginx -t`，執行 `node tests/pwa/nginx-headers.mjs http://127.0.0.1:18083` 逐一 GET manifest、worker、offline、所有 icons，檢查 200、上述 MIME、Cache-Control、ETag，帶 If-None-Match 再請求應回 304。此項不驗證 Laravel/FPM 或登入。
 
+## 使用者回報的安裝檢查（2026-10-29）
+
+| 平台 | 瀏覽器 | 安裝提示 | 完成安裝 |
+| --- | --- | --- | --- |
+| PC | Chrome | 有 | 未回報 |
+| PC | Edge | 有 | 未回報 |
+| PC | Firefox | 有 | 未回報 |
+| Android 16 | Samsung 瀏覽器 | 有 | 未回報 |
+| Android 16 | Firefox | 有 | 未回報 |
+| Android 16 | Chrome | 有 | 成功 |
+| Android 16 | Edge | 有 | 未回報 |
+
+以上為使用者回報，回報日期為 2026-10-29。部署 URL、瀏覽器版本、提示類型（瀏覽器安裝提示或網站內安裝說明）及由安裝圖示啟動的結果尚未記錄。其餘登入、離線與更新情境仍依下表驗收。
+
 ## 安裝與實際 HTTPS 驗收程序
 
-測試前記錄：部署 URL、commit、部署時間、最外層代理/CDN 規則與實際標頭、裝置/OS/瀏覽器版本、Email 與 LINE 測試帳號。以下結果尚未實測；取得 HTTPS、裝置及帳號後逐格填入結果、證據及缺陷連結。最終門檻是所有平台通過，不是本機建置成功。
+測試前記錄：部署 URL、commit、部署時間、最外層代理/CDN 規則與實際標頭、裝置/OS/瀏覽器版本、Email 與 LINE 測試帳號。下表依目前回報更新；未回報的測項維持待驗收，後續逐格填入結果、證據及缺陷連結。最終門檻是原訂桌面 Chrome/Edge、Android Chrome、iOS Safari 各項驗收通過。
 
 桌面 Chrome/Edge 使用網址列或瀏覽器選單的安裝功能，兩個瀏覽器分別測試；Android Chrome 使用「安裝應用程式／加到主畫面」；iOS Safari 使用分享選單「加入主畫面」。每次由新安裝圖示啟動後應進入 `/buttons`，確認 standalone 顯示與正確圖示。
 
 | 項目 | 桌面 Chrome | 桌面 Edge | Android Chrome | iOS Safari |
 | --- | --- | --- | --- | --- |
-| 裝置/OS/瀏覽器/HTTPS URL/版本記錄 | 未實測 | 未實測 | 未實測 | 未實測 |
-| 安裝／加入主畫面、圖示啟動 `/buttons` | 未實測 | 未實測 | 未實測 | 未實測 |
+| 裝置/OS/瀏覽器/HTTPS URL/版本記錄 | PC；其餘未提供 | PC；其餘未提供 | Android 16；其餘未提供 | 未實測 |
+| 出現安裝提示 | 有（使用者回報） | 有（使用者回報） | 有（使用者回報） | 未實測 |
+| 完成安裝／加入主畫面 | 未回報 | 未回報 | 成功（使用者回報） | 未實測 |
+| 由圖示啟動 `/buttons`、standalone 顯示與正確圖示 | 未實測 | 未實測 | 未實測 | 未實測 |
 | Email 登入連結完成後回到 PWA，登入態正確 | 未實測 | 未實測 | 未實測 | 未實測 |
 | LINE 登入 callback 回到 PWA，登入態正確 | 未實測 | 未實測 | 未實測 | 未實測 |
 | 已登入與未登入深連結、登入後返回原頁 | 未實測 | 未實測 | 未實測 | 未實測 |
@@ -42,4 +58,4 @@ POST 結果不明測試應讓伺服器收到請求後才中斷回應，記錄 re
 
 更新測試先安裝版本 A，部署版本 B，保持正常瀏覽與關閉重開，確認 worker 控制權、靜態離線頁版本與新 Vite 資產；記錄 DevTools 的 worker URL、版本及網路回應標頭。若更新失敗，先比對 CDN 與 origin，檢查快取規則與舊 worker，修正後重新跑所有相關項目。
 
-目前狀態：本機驗證結果見本次執行報告；實際 HTTPS、反向代理/CDN、桌面及行動裝置驗收均待提供環境後執行。
+目前狀態：本機程式檢查與暫時 Nginx HTTP 檢查已通過；使用者已回報上述安裝提示及 Android 16 Chrome 安裝成功。實際部署 URL、反向代理/CDN 設定及其餘平台情境仍待補充驗收。
