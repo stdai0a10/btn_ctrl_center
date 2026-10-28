@@ -135,6 +135,18 @@ body {
     font-family: ui-sans-serif, system-ui, sans-serif;
 }
 
+.pwa-install-help {
+    width: min(100% - 2rem, 55rem);
+    box-sizing: border-box;
+    margin: 0 auto;
+    padding: 0.75rem 0;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.pwa-install-help summary {
+    cursor: pointer;
+}
+
 .home-panel {
     display: grid;
     min-height: calc(100vh - 13rem);
