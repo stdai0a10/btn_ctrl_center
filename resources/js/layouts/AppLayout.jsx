@@ -57,6 +57,12 @@ export default function AppLayout({ children, contentClassName = '' }) {
                     </div>
                 </div>
             </header>
+            <details className="site-main" style={{ paddingBlock: '0.75rem' }}>
+                <summary style={{ cursor: 'pointer' }}>安裝到主畫面</summary>
+                <p>iPhone／iPad：以 Safari 開啟，點選「分享」→「加入主畫面」。</p>
+                <p>Android／電腦：開啟瀏覽器選單，選擇「安裝應用程式」或「加入主畫面」（依瀏覽器支援而定）。</p>
+                <p>安裝後仍需網路連線才能操作按鈕。</p>
+            </details>
             <main className={`site-main ${contentClassName}`}>
                 {children}
             </main>
