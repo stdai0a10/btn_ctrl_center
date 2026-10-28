@@ -1,9 +1,10 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { clearPendingAction, readPendingAction } from '../lib/pendingAction';
 
-export default function AppLayout({ children, contentClassName = '' }) {
+export default function AppLayout({ children, contentClassName = '', showInstallHelp = false }) {
+    const installDialogRef = useRef(null);
     const [menuOpen, setMenuOpen] = useState(false);
     const [logoutState, setLogoutState] = useState('');
     const [loggingOut, setLoggingOut] = useState(false);
@@ -93,12 +94,26 @@ export default function AppLayout({ children, contentClassName = '' }) {
             <main className={`site-main ${contentClassName}`}>
                 {children}
             </main>
-            <details className="pwa-install-help">
-                <summary>安裝到主畫面</summary>
-                <p>iPhone／iPad：以 Safari 開啟，點選「分享」→「加入主畫面」。</p>
-                <p>Android／電腦：開啟瀏覽器選單，選擇「安裝應用程式」或「加入主畫面」（依瀏覽器支援而定）。</p>
-                <p>安裝後仍需網路連線才能操作按鈕。</p>
-            </details>
+            {showInstallHelp && <>
+                <div className="pwa-install-help">
+                    <button type="button" className="pwa-install-trigger" aria-haspopup="dialog" aria-controls="pwa-install-dialog" onClick={() => installDialogRef.current.showModal()}>
+                        安裝到主畫面
+                    </button>
+                </div>
+                <dialog id="pwa-install-dialog" ref={installDialogRef} className="pwa-install-dialog" aria-labelledby="pwa-install-title" onClick={(event) => {
+                    if (event.target === event.currentTarget) event.currentTarget.close();
+                }}>
+                    <div className="app-dialog">
+                        <div className="app-dialog-heading">
+                            <h2 id="pwa-install-title">安裝到主畫面</h2>
+                            <button type="button" className="app-dialog-close" aria-label="關閉安裝說明" onClick={() => installDialogRef.current.close()}>×</button>
+                        </div>
+                        <p>iPhone／iPad：以 Safari 開啟，點選「分享」→「加入主畫面」。</p>
+                        <p>Android／電腦：開啟瀏覽器選單，選擇「安裝應用程式」或「加入主畫面」（依瀏覽器支援而定）。</p>
+                        <p>安裝後仍需網路連線才能操作按鈕。</p>
+                    </div>
+                </dialog>
+            </>}
         </div>
     );
 }

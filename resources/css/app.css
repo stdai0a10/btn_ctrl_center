@@ -143,8 +143,29 @@ body {
     font-family: ui-sans-serif, system-ui, sans-serif;
 }
 
-.pwa-install-help summary {
-    cursor: pointer;
+.pwa-install-help .pwa-install-trigger {
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--accent-dark);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.pwa-install-dialog {
+    width: min(100% - 2rem, 31rem);
+    max-width: none;
+    max-height: none;
+    margin: auto;
+    border: 0;
+    padding: 0;
+    overflow: visible;
+    background: transparent;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.pwa-install-dialog::backdrop {
+    background: rgba(23, 33, 29, 0.48);
 }
 
 .home-panel {

@@ -7,7 +7,7 @@ import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 let Components;
 before(async () => {
-    const result = await build({ stdin: { contents: "export {default as Buttons} from './resources/js/pages/Buttons/Index.jsx'; export {default as Layout} from './resources/js/layouts/AppLayout.jsx';", resolveDir: process.cwd(), loader: 'jsx' }, bundle: true, format: 'esm', platform: 'node', jsx: 'automatic', external: ['react', 'react-dom', 'lucide-react', 'react/jsx-runtime'], write: false, plugins: [{ name: 'inertia-test-context', setup(b) { b.onResolve({filter: /^@inertiajs\/react$/}, () => ({path:'inertia', namespace:'test'})); b.onLoad({filter:/.*/, namespace:'test'}, () => ({contents: "import React from 'react'; export const Head=()=>null; export const Link=({href,children,...p})=>React.createElement('a',{href,...p},children); export const usePage=()=>({props:{auth:{user:globalThis.testUser}}}); export const router={visit:(url)=>globalThis.visits.push(url)};"})); } }] });
+    const result = await build({ stdin: { contents: "export {default as Buttons} from './resources/js/pages/Buttons/Index.jsx'; export {default as Layout} from './resources/js/layouts/AppLayout.jsx'; export {default as Home} from './resources/js/pages/Home.jsx'; export {default as Login} from './resources/js/pages/Auth/Login.jsx';", resolveDir: process.cwd(), loader: 'jsx' }, bundle: true, format: 'esm', platform: 'node', jsx: 'automatic', external: ['react', 'react-dom', 'lucide-react', 'react/jsx-runtime'], write: false, plugins: [{ name: 'inertia-test-context', setup(b) { b.onResolve({filter: /^@inertiajs\/react$/}, () => ({path:'inertia', namespace:'test'})); b.onLoad({filter:/.*/, namespace:'test'}, () => ({contents: "import React from 'react'; export const Head=()=>null; export const Link=({href,children,...p})=>React.createElement('a',{href,...p},children); export const usePage=()=>({props:{auth:{user:globalThis.testUser}}}); export const router={visit:(url)=>globalThis.visits.push(url)};"})); } }] });
     const path = new URL('./.offline-test-bundle.mjs', import.meta.url);
     await writeFile(path, result.outputFiles[0].text);
     try { Components = await import(path.href); } finally { await unlink(path); }
@@ -20,6 +20,9 @@ async function mount({get, post, storage, online=true, component='Buttons', user
     Object.defineProperty(window.navigator,'onLine',{value:online,configurable:true});
     window.requestAnimationFrame=(fn)=>setTimeout(fn,0); window.cancelAnimationFrame=clearTimeout;
     window.HTMLElement.prototype.scrollIntoView=()=>{};
+    // JSDOM has no native top layer; Chrome verifies focus, Escape and modal placement.
+    window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+    window.HTMLDialogElement.prototype.close = function () { this.open = false; };
     globalThis.IS_REACT_ACT_ENVIRONMENT=true; globalThis.testUser={public_id:user}; globalThis.visits=[];
     if(storage) window.localStorage.setItem('button-action-pending',storage);
     let posts=0; window.axios={get:get??(async url=>response(url==='/api/button-pages'?[page]:url.includes('targets')?[]:null)),post:async(...args)=>{posts++;return post?.(...args)}};
@@ -154,4 +157,34 @@ for(const endpoint of ['/api/button-pages','/api/button-actions/current'])test(`
         assert.equal([...document.querySelectorAll('button')].find(b=>b.textContent==='開燈').matches(':disabled'),false);
         assert.equal(app.posts,0);
     }finally{await app.close();}
+});
+test('install instructions open in a modal and close without navigating', async () => {
+    const app = await mount({ component: 'Home' });
+    try {
+        const dialog = document.querySelector('dialog');
+        assert.ok(dialog, 'install instructions use a modal dialog');
+        assert.equal(dialog.open, false);
+        await click('安裝到主畫面');
+        assert.equal(dialog.open, true);
+        assert.equal(dialog.getAttribute('aria-labelledby'), 'pwa-install-title');
+        assert.match(dialog.textContent, /Safari.*加入主畫面/);
+        assert.match(dialog.textContent, /Android／電腦/);
+        await act(async () => dialog.querySelector('[aria-label="關閉安裝說明"]').click());
+        assert.equal(dialog.open, false);
+        await click('安裝到主畫面');
+        await act(async () => dialog.dispatchEvent(new window.MouseEvent('click', { bubbles: true })));
+        assert.equal(dialog.open, false);
+        assert.deepEqual(globalThis.visits, []);
+        assert.equal(app.posts, 0);
+    } finally { await app.close(); }
+});
+test('install help appears only on the homepage, not login or other layouts', async () => {
+    for (const component of ['Home', 'Login', 'Layout']) {
+        const app = await mount({ component });
+        try {
+            const trigger = [...document.querySelectorAll('button')].find(button => button.textContent === '安裝到主畫面');
+            assert.equal(Boolean(trigger), component === 'Home', component);
+            assert.equal(Boolean(document.querySelector('dialog')), component === 'Home', component);
+        } finally { await app.close(); }
+    }
 });
