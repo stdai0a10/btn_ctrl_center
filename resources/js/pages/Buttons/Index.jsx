@@ -103,12 +103,12 @@ export default function ButtonsIndex() {
         recoveringRef.current = true;
         try {
             const response = await window.axios.get(`/api/button-actions/request/${encodeURIComponent(pending.request_id)}`);
-            if (currentUserRef.current !== userId) return;
+            if (currentUserRef.current !== userId || pendingRef.current !== pending) return;
             setJob(response.data.data.job);
             clearPendingAction(); pendingRef.current = null;
             setUncertain(''); setDisconnected(false);
         } catch (caught) {
-            if (currentUserRef.current !== userId) return;
+            if (currentUserRef.current !== userId || pendingRef.current !== pending) return;
             if (caught.response?.status === 404) {
                 setUncertain('查無任務紀錄，請手動確認設備狀態；不會自動重送。');
                 setDisconnected(false);
@@ -427,17 +427,18 @@ export default function ButtonsIndex() {
 
         if (processing || pendingRef.current) return;
         const requestId = window.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
-        pendingRef.current = savePendingAction(requestId, userId);
+        const pending = savePendingAction(requestId, userId);
+        pendingRef.current = pending;
         setProcessing(true); setError(''); setMessage('');
         try {
             const response = await window.axios.post('/api/button-actions', {
                 button_public_id: button.public_id, request_id: requestId,
             });
-            if (currentUserRef.current !== userId) return;
+            if (currentUserRef.current !== userId || pendingRef.current !== pending) return;
             setJob(response.data.data.job);
             clearPendingAction(); pendingRef.current = null; setUncertain('');
         } catch (caught) {
-            if (currentUserRef.current !== userId) return;
+            if (currentUserRef.current !== userId || pendingRef.current !== pending) return;
             if (!caught.response || caught.response.status >= 500) {
                 setUncertain('結果不確定，請恢復連線後查證；不會自動重送。');
                 if (!caught.response) setDisconnected(true);

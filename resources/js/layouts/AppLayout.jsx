@@ -26,18 +26,19 @@ export default function AppLayout({ children, contentClassName = '' }) {
     }
 
     useEffect(() => { readPendingAction(user?.public_id); }, [user?.public_id]);
+    async function checkAuthentication() {
+        try {
+            await window.axios.get('/api/auth/me');
+            setLogoutState('仍保持登入，請重新登出。');
+        } catch (caught) {
+            if (caught.response?.status === 401) { clearPendingAction(); router.visit('/'); }
+        }
+    }
+
     useEffect(() => {
         if (!logoutState.includes('結果不確定')) return undefined;
-        const check = async () => {
-            try {
-                await window.axios.get('/api/auth/me');
-                setLogoutState('仍保持登入，請重新登出。');
-            } catch (caught) {
-                if (caught.response?.status === 401) { clearPendingAction(); router.visit('/'); }
-            }
-        };
-        window.addEventListener('online', check);
-        return () => window.removeEventListener('online', check);
+        window.addEventListener('online', checkAuthentication);
+        return () => window.removeEventListener('online', checkAuthentication);
     }, [logoutState]);
 
     function authAction() {
@@ -92,7 +93,9 @@ export default function AppLayout({ children, contentClassName = '' }) {
                 <p>Android／電腦：開啟瀏覽器選單，選擇「安裝應用程式」或「加入主畫面」（依瀏覽器支援而定）。</p>
                 <p>安裝後仍需網路連線才能操作按鈕。</p>
             </details>
-            {logoutState && <div role="status" className="notice error">{logoutState}</div>}
+            {logoutState && <div role="status" className="notice error">{logoutState}
+                {logoutState.includes('結果不確定') && <button type="button" onClick={checkAuthentication}>確認登入狀態</button>}
+            </div>}
             <main className={`site-main ${contentClassName}`}>
                 {children}
             </main>

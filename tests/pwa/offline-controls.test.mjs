@@ -103,3 +103,27 @@ test('late response failure from previous account cannot recreate its unknown st
         assert.equal(window.localStorage.getItem('button-action-pending'),null);assert.equal(app.posts,1);
     }finally{await app.close();}
 });
+
+
+test('unknown logout can be checked manually while browser remains online',async()=>{
+    let authenticated=true;
+    const app=await mount({component:'Layout',storage:JSON.stringify({request_id:'id',user_public_id:'user1',created_at:Date.now()}),post:async()=>{throw new Error('network')},get:async()=>{if(!authenticated)throw {response:{status:401}};return response({});}});
+    try{
+        await click('登出');assert.equal(window.navigator.onLine,true);assert.match(app.text(),/登出結果不確定/);
+        await click('確認登入狀態');assert.match(app.text(),/仍保持登入/);assert.ok(window.localStorage.getItem('button-action-pending'));assert.equal(visits.length,0);
+        await click('登出');authenticated=false;await click('確認登入狀態');
+        assert.deepEqual(visits,['/']);assert.equal(window.localStorage.getItem('button-action-pending'),null);assert.equal(app.posts,2);
+    }finally{await app.close();}
+});
+test('successful recovery ignores the original POST late rejection',async()=>{
+    let rejectPost;
+    const app=await mount({post:()=>new Promise((resolve,reject)=>{rejectPost=reject;}),get:async url=>response(url.includes('/request/')?{job:{public_id:'job1',status:'succeeded'}}:url==='/api/button-pages'?[page]:url.includes('targets')?[]:null)});
+    try{
+        await click('開燈');
+        await act(async()=>{window.dispatchEvent(new window.Event('online'));await new Promise(r=>setTimeout(r,10));});
+        assert.match(app.text(),/執行成功/);assert.equal(window.localStorage.getItem('button-action-pending'),null);
+        await act(async()=>{rejectPost(new Error('network'));await new Promise(r=>setTimeout(r,10));});
+        assert.doesNotMatch(app.text(),/結果不確定|連線中斷/);assert.match(app.text(),/執行成功/);
+        assert.equal([...document.querySelectorAll('button')].find(b=>b.textContent==='開燈').matches(':disabled'),false);assert.equal(app.posts,1);
+    }finally{await app.close();}
+});
