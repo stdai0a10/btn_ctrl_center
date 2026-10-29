@@ -9,3 +9,5 @@
 以及具備權限與稽核機制的管理後台。
 
 現在為概念驗證階段 ([Branch poc](https://github.com/stdai0a10/btn_ctrl_center/tree/poc))
+
+PWA 部署與驗收：[操作文件](docs/pwa-deployment.md)。

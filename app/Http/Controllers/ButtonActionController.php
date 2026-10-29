@@ -85,6 +85,16 @@ class ButtonActionController extends ApiController
         return $this->response(['job' => $this->jobPayload($job)]);
     }
 
+    public function byRequest(Request $request, string $requestId)
+    {
+        $job = ButtonActionJob::query()
+            ->where('user_id', $request->user()->id)
+            ->where('request_id', $requestId)
+            ->firstOrFail();
+
+        return $this->response(['job' => $this->jobPayload($job)]);
+    }
+
     private function jobPayload(ButtonActionJob $job): array
     {
         $job->loadMissing(['button', 'device', 'productFunction']);

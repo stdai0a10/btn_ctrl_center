@@ -5,7 +5,7 @@ export default function Home({ appName }) {
     return (
         <>
             <Head title="首頁" />
-            <AppLayout>
+            <AppLayout showInstallHelp>
                 <section className="home-panel">
                     <h1>{appName}</h1>
                     <p>Laravel 12 + Inertia + React</p>

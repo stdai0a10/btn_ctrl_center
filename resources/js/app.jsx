@@ -31,3 +31,12 @@ createInertiaApp({
     },
     title: (title) => (title ? `${title} - MyApp` : 'MyApp'),
 })
+
+// Registration is optional: installation failures must never block the app.
+if ('serviceWorker' in navigator && window.isSecureContext) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((error) => {
+            console.warn('Service worker registration failed:', error);
+        });
+    });
+}

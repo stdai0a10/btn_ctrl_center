@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Button Control Center">
+  <rect width="1024" height="1024" fill="#256c68"/>
+  <path d="M 618 334 A 214 214 0 1 1 406 334" fill="none" stroke="#ffffff" stroke-width="96" stroke-linecap="round"/>
+  <path d="M 512 256 V 478" fill="none" stroke="#ffffff" stroke-width="96" stroke-linecap="round"/>
+</svg>
